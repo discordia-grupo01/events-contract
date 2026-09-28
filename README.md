@@ -23,7 +23,16 @@ membership/
   events.go       -- MemberJoined, MemberLeft (Go)
   events_test.go
   # events.ex     -- binding Elixir, cuando exista ese consumidor/publisher
+moderation/
+  events.go       -- MemberBanned, MemberUnbanned (Go)
+  events_test.go
 ```
+
+Un ban publica, en la misma transacción, `servers.member_left` (de
+`membership/`) y `servers.member_banned` (de `moderation/`): quien solo
+lleva la membresía escucha el primero; quien tiene que reaccionar al ban
+(cortar sesiones de mensajería/voz, auditoría) escucha el segundo. El
+motivo del ban no viaja en el evento (minimización de datos).
 
 Cada evento es un tipo con nombre propio (embebe los campos comunes, no los
 repite) -- así uno puede evolucionar sin arrastrar al otro (ej. agregarle
