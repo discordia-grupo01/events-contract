@@ -26,7 +26,26 @@ channels/
   events.go       -- ChannelCreated, ChannelDeleted (Go, publicados por servers)
   events_test.go
   events.ex       -- mismo binding en Elixir (consumido por messaging)
+moderation/
+  events.go       -- MemberBanned, MemberUnbanned (Go)
+  events_test.go
+users/
+  events.go       -- ProfileUpdated (Go), publicado por identify
+  events_test.go
 ```
+
+Un ban publica, en la misma transacción, `servers.member_left` (de
+`membership/`) y `servers.member_banned` (de `moderation/`): quien solo
+lleva la membresía escucha el primero; quien tiene que reaccionar al ban
+(cortar sesiones de mensajería/voz, auditoría) escucha el segundo. El
+motivo del ban no viaja en el evento (minimización de datos).
+
+`users.profile_updated` es una foto completa del perfil público (nombre,
+avatar, descripción y estado), no un diff: identify lo publica al crear un
+usuario y en cada cambio de perfil o estado. `version` crece con cada cambio
+del mismo usuario; el consumidor aplica una foto solo si su `version` es
+mayor a la que ya tiene, así que eventos repetidos o fuera de orden no pisan
+datos más nuevos. El email no viaja nunca (minimización de datos).
 
 Cada evento es un tipo con nombre propio (embebe los campos comunes, no los
 repite) -- así uno puede evolucionar sin arrastrar al otro (ej. agregarle
@@ -58,15 +77,15 @@ CI ni en el build de Docker de los consumidores.
 Este repo no se despliega -- el "CD" es taguear:
 
 ```bash
-git tag v0.2.0
-git push origin v0.2.0
+git tag v0.3.0
+git push origin v0.3.0
 ```
 
 Los consumidores (`servers`, `identify-service`) fijan la versión en su
 `go.mod` y la actualizan con:
 
 ```bash
-go get github.com/discordia-grupo01/events-contract@v0.2.0
+go get github.com/discordia-grupo01/events-contract@v0.3.0
 ```
 
 Un cambio que rompe compatibilidad (renombrar un campo, sacar uno) primero
