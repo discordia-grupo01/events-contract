@@ -22,7 +22,10 @@ broker/     -- topología compartida del exchange (nombre, tipo)
 membership/
   events.go       -- MemberJoined, MemberLeft (Go)
   events_test.go
-  # events.ex     -- binding Elixir, cuando exista ese consumidor/publisher
+channels/
+  events.go       -- ChannelCreated, ChannelDeleted (Go, publicados por servers)
+  events_test.go
+  events.ex       -- mismo binding en Elixir (consumido por messaging)
 moderation/
   events.go       -- MemberBanned, MemberUnbanned (Go)
   events_test.go
