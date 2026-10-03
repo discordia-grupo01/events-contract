@@ -29,6 +29,10 @@ channels/
 moderation/
   events.go       -- MemberBanned, MemberUnbanned (Go)
   events_test.go
+servers/
+  events.go       -- ServerDeleted (Go, publicado por servers)
+  events_test.go
+  events.ex       -- mismo binding en Elixir (consumido por messaging)
 users/
   events.go       -- ProfileUpdated (Go), publicado por identify
   events_test.go
@@ -39,6 +43,12 @@ Un ban publica, en la misma transacción, `servers.member_left` (de
 lleva la membresía escucha el primero; quien tiene que reaccionar al ban
 (cortar sesiones de mensajería/voz, auditoría) escucha el segundo. El
 motivo del ban no viaja en el evento (minimización de datos).
+
+Eliminar un servidor publica, en la misma transacción que el borrado, un
+`servers.member_left` por cada miembro (quien lleva la membresía, como
+`identify-service`, no necesita saber nada nuevo) y un
+`servers.server_deleted` (de `servers/`) con los ids de todos sus canales, para
+quien guarda datos por canal (`messaging` borra ahí los mensajes).
 
 `users.profile_updated` es una foto completa del perfil público (nombre,
 avatar, descripción y estado), no un diff: identify lo publica al crear un
