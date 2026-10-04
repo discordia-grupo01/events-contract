@@ -49,12 +49,35 @@ func TestMemberUnbannedJSONShape(t *testing.T) {
 	})
 }
 
+func TestMemberKickedJSONShape(t *testing.T) {
+	event := moderation.MemberKicked{
+		Meta: envelope.Meta{
+			EventID:    "evt-3",
+			OccurredAt: time.Date(2026, 1, 3, 0, 0, 0, 0, time.UTC),
+		},
+		ServerID: "server-1",
+		UserID:   "user-1",
+		KickedBy: "user-2",
+	}
+
+	assertJSONShape(t, event, map[string]string{
+		"event_id":    "evt-3",
+		"server_id":   "server-1",
+		"user_id":     "user-1",
+		"kicked_by":   "user-2",
+		"occurred_at": "2026-01-03T00:00:00Z",
+	})
+}
+
 func TestRoutingKeys(t *testing.T) {
 	if moderation.RoutingKeyMemberBanned != "servers.member_banned" {
 		t.Errorf("RoutingKeyMemberBanned = %q", moderation.RoutingKeyMemberBanned)
 	}
 	if moderation.RoutingKeyMemberUnbanned != "servers.member_unbanned" {
 		t.Errorf("RoutingKeyMemberUnbanned = %q", moderation.RoutingKeyMemberUnbanned)
+	}
+	if moderation.RoutingKeyMemberKicked != "servers.member_kicked" {
+		t.Errorf("RoutingKeyMemberKicked = %q", moderation.RoutingKeyMemberKicked)
 	}
 }
 
