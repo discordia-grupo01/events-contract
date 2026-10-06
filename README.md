@@ -22,6 +22,7 @@ broker/     -- topología compartida del exchange (nombre, tipo)
 membership/
   events.go       -- MemberJoined, MemberLeft (Go)
   events_test.go
+  events.ex       -- binding Elixir de MemberLeft (consumido por messaging)
 channels/
   events.go       -- ChannelCreated, ChannelDeleted (Go, publicados por servers)
   events_test.go
