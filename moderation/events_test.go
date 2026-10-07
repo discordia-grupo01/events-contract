@@ -69,6 +69,52 @@ func TestMemberKickedJSONShape(t *testing.T) {
 	})
 }
 
+func TestMemberMutedJSONShape(t *testing.T) {
+	event := moderation.MemberMuted{
+		Meta: envelope.Meta{
+			EventID:    "evt-4",
+			OccurredAt: time.Date(2026, 1, 4, 0, 0, 0, 0, time.UTC),
+		},
+		ServerID: "server-1",
+		UserID:   "user-1",
+		MutedBy:  "user-2",
+		UntilAt:  time.Date(2026, 1, 5, 0, 0, 0, 0, time.UTC),
+		Reason:   "spam",
+	}
+
+	assertJSONShape(t, event, map[string]string{
+		"event_id":    "evt-4",
+		"server_id":   "server-1",
+		"user_id":     "user-1",
+		"muted_by":    "user-2",
+		"until_at":    "2026-01-05T00:00:00Z",
+		"reason":      "spam",
+		"occurred_at": "2026-01-04T00:00:00Z",
+	})
+}
+
+func TestMemberUnmutedJSONShape(t *testing.T) {
+	event := moderation.MemberUnmuted{
+		Meta: envelope.Meta{
+			EventID:    "evt-5",
+			OccurredAt: time.Date(2026, 1, 5, 0, 0, 0, 0, time.UTC),
+		},
+		ServerID:  "server-1",
+		UserID:    "user-1",
+		UnmutedBy: "user-2",
+		Reason:    "expired",
+	}
+
+	assertJSONShape(t, event, map[string]string{
+		"event_id":    "evt-5",
+		"server_id":   "server-1",
+		"user_id":     "user-1",
+		"unmuted_by":  "user-2",
+		"reason":      "expired",
+		"occurred_at": "2026-01-05T00:00:00Z",
+	})
+}
+
 func TestRoutingKeys(t *testing.T) {
 	if moderation.RoutingKeyMemberBanned != "servers.member_banned" {
 		t.Errorf("RoutingKeyMemberBanned = %q", moderation.RoutingKeyMemberBanned)
@@ -78,6 +124,12 @@ func TestRoutingKeys(t *testing.T) {
 	}
 	if moderation.RoutingKeyMemberKicked != "servers.member_kicked" {
 		t.Errorf("RoutingKeyMemberKicked = %q", moderation.RoutingKeyMemberKicked)
+	}
+	if moderation.RoutingKeyMemberMuted != "servers.member_muted" {
+		t.Errorf("RoutingKeyMemberMuted = %q", moderation.RoutingKeyMemberMuted)
+	}
+	if moderation.RoutingKeyMemberUnmuted != "servers.member_unmuted" {
+		t.Errorf("RoutingKeyMemberUnmuted = %q", moderation.RoutingKeyMemberUnmuted)
 	}
 }
 
