@@ -1,11 +1,17 @@
 package moderation
 
-import "github.com/discordia-grupo01/events-contract/envelope"
+import (
+	"time"
+
+	"github.com/discordia-grupo01/events-contract/envelope"
+)
 
 const (
 	RoutingKeyMemberBanned   = "servers.member_banned"
 	RoutingKeyMemberUnbanned = "servers.member_unbanned"
 	RoutingKeyMemberKicked   = "servers.member_kicked"
+	RoutingKeyMemberMuted    = "servers.member_muted"
+	RoutingKeyMemberUnmuted  = "servers.member_unmuted"
 )
 
 // MemberBanned is published when a member is banned from a server. The same
@@ -36,4 +42,24 @@ type MemberKicked struct {
 	ServerID string `json:"server_id"`
 	UserID   string `json:"user_id"`
 	KickedBy string `json:"kicked_by"`
+}
+
+// MemberMuted is published when a member loses the ability to send messages
+// and publish voice for a limited period. The session remains connected.
+type MemberMuted struct {
+	envelope.Meta
+	ServerID string    `json:"server_id"`
+	UserID   string    `json:"user_id"`
+	MutedBy  string    `json:"muted_by"`
+	UntilAt  time.Time `json:"until_at"`
+	Reason   string    `json:"reason"`
+}
+
+// MemberUnmuted is published when a mute is manually revoked or expires.
+type MemberUnmuted struct {
+	envelope.Meta
+	ServerID  string `json:"server_id"`
+	UserID    string `json:"user_id"`
+	UnmutedBy string `json:"unmuted_by"`
+	Reason    string `json:"reason"`
 }
