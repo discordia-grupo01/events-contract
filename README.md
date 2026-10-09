@@ -24,7 +24,7 @@ membership/
   events_test.go
   events.ex       -- binding Elixir de MemberLeft (consumido por messaging)
 channels/
-  events.go       -- ChannelCreated, ChannelDeleted (Go, publicados por servers)
+  events.go       -- ChannelCreated, ChannelDeleted, ChannelAccessRevoked (Go, publicados por servers)
   events_test.go
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 moderation/
@@ -55,6 +55,20 @@ Eliminar un servidor publica, en la misma transacciÃ³n que el borrado, un
 `identify-service`, no necesita saber nada nuevo) y un
 `servers.server_deleted` (de `servers/`) con los ids de todos sus canales, para
 quien guarda datos por canal (`messaging` borra ahÃ­ los mensajes).
+
+`servers.channel_access_revoked` (de `channels/`) avisa quiénes dejaron de
+ver un canal: miembros que tenían `VIEW_CHANNELS` en él (después de los
+overrides por rol, #57) y ya no lo tienen. servers lo calcula comparando el
+antes y el después dentro de la misma transacción del cambio, y publica uno
+por canal afectado (de texto o de voz), con `user_ids` = solo los que
+perdieron acceso (nunca vacío). Lo disparan: crear/editar/borrar un override,
+editar o borrar un rol, asignar o quitar un rol, aceptar una transferencia de
+propiedad, y expulsar, banear o abandonar (en esos tres casos además del
+`servers.member_left`). Ganar acceso no se publica. Pensado para cortar lo que
+el usuario tenga abierto en ese canal: `messaging` cierra su socket y
+`voice-sfu` lo saca de la sala de voz. Como solo corta y al reconectar se
+vuelve a chequear el estado actual, un evento repetido o fuera de orden cuesta
+a lo sumo una reconexión de más -- no hace falta descartar eventos viejos.
 
 `users.profile_updated` es una foto completa del perfil pÃºblico (nombre,
 avatar, descripciÃ³n y estado), no un diff: identify lo publica al crear un
