@@ -37,6 +37,11 @@ servers/
 users/
   events.go       -- ProfileUpdated (Go), publicado por identify
   events_test.go
+permissions/
+  events.go       -- RoleUpdated, RoleDeleted, MemberRolesUpdated,
+                     ChannelOverridesUpdated, OwnerUpdated (Go, publicados por servers)
+  events_test.go
+  events.ex       -- binding de referencia en Elixir (consumido por messaging)
 ```
 
 Un ban publica, en la misma transacción, `servers.member_left` (de
@@ -76,6 +81,26 @@ usuario y en cada cambio de perfil o estado. `version` crece con cada cambio
 del mismo usuario; el consumidor aplica una foto solo si su `version` es
 mayor a la que ya tiene, así que eventos repetidos o fuera de orden no pisan
 datos más nuevos. El email no viaja nunca (minimización de datos).
+
+Los eventos de `permissions/` son la réplica de "quién puede qué" para quien
+no quiere preguntarle a servers en cada pedido (`messaging` autoriza cada
+mensaje con ellos). Son fotos completas de una entidad, no diferencias, igual
+que `users.profile_updated`: `servers.role_updated` (nombre de los permisos del
+rol e `is_everyone`; se publica al crear y en cada cambio),
+`servers.role_deleted`, `servers.member_roles_updated` (el conjunto completo de
+roles de un miembro, @everyone incluido; se publica al unirse y en cada
+asignación o quita), `servers.channel_overrides_updated` (todos los overrides de
+un canal; lista vacía si no queda ninguno) y `servers.owner_updated` (al crear
+el servidor y en cada transferencia). Los permisos viajan por nombre
+(`VIEW_CHANNELS`, `SEND_MESSAGES`, ...), nunca como máscara de bits, para no
+atar al consumidor al orden interno de servers. El consumidor se queda con la
+foto de `occurred_at` más nueva de cada entidad, así que un evento repetido o
+fuera de orden no pisa datos más recientes. Borrar un rol no publica un evento
+por cada miembro u override que lo tenía: el consumidor lo saca de los
+miembros y de los overrides al recibir `servers.role_deleted`, y borrar un
+canal o un servidor arrastra sus overrides. Al sumar un consumidor nuevo hay
+que relanzar el backfill (migración de servers que re-publica todo) porque
+RabbitMQ no guarda lo que se publicó antes de que su cola existiera.
 
 Cada evento es un tipo con nombre propio (embebe los campos comunes, no los
 repite) -- así uno puede evolucionar sin arrastrar al otro (ej. agregarle
