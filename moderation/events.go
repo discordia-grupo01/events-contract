@@ -12,6 +12,8 @@ const (
 	RoutingKeyMemberKicked   = "servers.member_kicked"
 	RoutingKeyMemberMuted    = "servers.member_muted"
 	RoutingKeyMemberUnmuted  = "servers.member_unmuted"
+
+	RoutingKeyWordFilterUpdated = "servers.word_filter_updated"
 )
 
 // MemberBanned is published when a member is banned from a server. The same
@@ -62,4 +64,15 @@ type MemberUnmuted struct {
 	UserID    string `json:"user_id"`
 	UnmutedBy string `json:"unmuted_by"`
 	Reason    string `json:"reason"`
+}
+
+// WordFilterUpdated is published every time a server's banned words list
+// changes. It carries the whole list, not a diff, so consumers keep the one
+// with the newest occurred_at and a repeated or late event never undoes a
+// newer change. Words must never be nil: an empty list (no filter) has to
+// marshal as [] and not as null.
+type WordFilterUpdated struct {
+	envelope.Meta
+	ServerID string   `json:"server_id"`
+	Words    []string `json:"words"`
 }

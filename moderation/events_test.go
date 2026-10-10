@@ -131,6 +131,40 @@ func TestRoutingKeys(t *testing.T) {
 	if moderation.RoutingKeyMemberUnmuted != "servers.member_unmuted" {
 		t.Errorf("RoutingKeyMemberUnmuted = %q", moderation.RoutingKeyMemberUnmuted)
 	}
+	if moderation.RoutingKeyWordFilterUpdated != "servers.word_filter_updated" {
+		t.Errorf("RoutingKeyWordFilterUpdated = %q", moderation.RoutingKeyWordFilterUpdated)
+	}
+}
+
+func TestWordFilterUpdatedJSONShape(t *testing.T) {
+	for name, tc := range map[string]struct {
+		words []string
+		want  string
+	}{
+		"with words": {[]string{"tonto", "no sirve"}, `["tonto","no sirve"]`},
+		"empty list": {[]string{}, `[]`},
+	} {
+		event := moderation.WordFilterUpdated{
+			Meta: envelope.Meta{
+				EventID:    "evt-6",
+				OccurredAt: time.Date(2026, 10, 10, 18, 0, 0, 0, time.UTC),
+			},
+			ServerID: "server-1",
+			Words:    tc.words,
+		}
+
+		raw, err := json.Marshal(event)
+		if err != nil {
+			t.Fatalf("%s: marshal: %v", name, err)
+		}
+		var got map[string]json.RawMessage
+		if err := json.Unmarshal(raw, &got); err != nil {
+			t.Fatalf("%s: unmarshal: %v", name, err)
+		}
+		if len(got) != 4 || string(got["words"]) != tc.want || string(got["server_id"]) != `"server-1"` {
+			t.Errorf("%s: got %s", name, raw)
+		}
+	}
 }
 
 // assertJSONShape checks that event marshals to exactly the keys in want --

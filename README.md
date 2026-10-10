@@ -28,7 +28,8 @@ channels/
   events_test.go
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 moderation/
-  events.go       -- MemberBanned, MemberUnbanned, MemberKicked (Go)
+  events.go       -- MemberBanned, MemberUnbanned, MemberKicked, MemberMuted,
+                     MemberUnmuted, WordFilterUpdated (Go)
   events_test.go
 servers/
   events.go       -- ServerDeleted (Go, publicado por servers)
@@ -81,6 +82,12 @@ usuario y en cada cambio de perfil o estado. `version` crece con cada cambio
 del mismo usuario; el consumidor aplica una foto solo si su `version` es
 mayor a la que ya tiene, así que eventos repetidos o fuera de orden no pisan
 datos más nuevos. El email no viaja nunca (minimización de datos).
+
+`servers.word_filter_updated` (de `moderation/`) es la lista completa de
+palabras prohibidas de un servidor, no un diff: servers la publica en cada
+cambio (lista vacía si se borraron todas). `messaging` la usa para rechazar
+mensajes que las contengan; se queda con la de `occurred_at` más nuevo, así
+que un evento repetido o fuera de orden no pisa una lista más reciente.
 
 Los eventos de `permissions/` son la réplica de "quién puede qué" para quien
 no quiere preguntarle a servers en cada pedido (`messaging` autoriza cada
