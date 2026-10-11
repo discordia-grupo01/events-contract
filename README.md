@@ -43,6 +43,10 @@ permissions/
                      ChannelOverridesUpdated, OwnerUpdated (Go, publicados por servers)
   events_test.go
   events.ex       -- binding de referencia en Elixir (consumido por messaging)
+voice/
+  events.go       -- voice.participants_joined, voice.participant_left (consume server)
+  events.ex       -- Mensajes publicados por Elixir signaling
+  events_test.go 
 ```
 
 Un ban publica, en la misma transacciÃ³n, `servers.member_left` (de
@@ -62,19 +66,19 @@ Eliminar un servidor publica, en la misma transacciÃ³n que el borrado, un
 `servers.server_deleted` (de `servers/`) con los ids de todos sus canales, para
 quien guarda datos por canal (`messaging` borra ahÃ­ los mensajes).
 
-`servers.channel_access_revoked` (de `channels/`) avisa quiénes dejaron de
-ver un canal: miembros que tenían `VIEW_CHANNELS` en él (después de los
+`servers.channel_access_revoked` (de `channels/`) avisa quiï¿½nes dejaron de
+ver un canal: miembros que tenï¿½an `VIEW_CHANNELS` en ï¿½l (despuï¿½s de los
 overrides por rol, #57) y ya no lo tienen. servers lo calcula comparando el
-antes y el después dentro de la misma transacción del cambio, y publica uno
+antes y el despuï¿½s dentro de la misma transacciï¿½n del cambio, y publica uno
 por canal afectado (de texto o de voz), con `user_ids` = solo los que
-perdieron acceso (nunca vacío). Lo disparan: crear/editar/borrar un override,
+perdieron acceso (nunca vacï¿½o). Lo disparan: crear/editar/borrar un override,
 editar o borrar un rol, asignar o quitar un rol, aceptar una transferencia de
-propiedad, y expulsar, banear o abandonar (en esos tres casos además del
+propiedad, y expulsar, banear o abandonar (en esos tres casos ademï¿½s del
 `servers.member_left`). Ganar acceso no se publica. Pensado para cortar lo que
 el usuario tenga abierto en ese canal: `messaging` cierra su socket y
 `voice-sfu` lo saca de la sala de voz. Como solo corta y al reconectar se
 vuelve a chequear el estado actual, un evento repetido o fuera de orden cuesta
-a lo sumo una reconexión de más -- no hace falta descartar eventos viejos.
+a lo sumo una reconexiï¿½n de mï¿½s -- no hace falta descartar eventos viejos.
 
 `users.profile_updated` es una foto completa del perfil pÃºblico (nombre,
 avatar, descripciÃ³n y estado), no un diff: identify lo publica al crear un
