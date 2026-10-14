@@ -61,8 +61,78 @@ func TestProfileUpdatedJSONShape(t *testing.T) {
 	}
 }
 
+// AccountRegistered marshals to exactly these keys: no missing field and no
+// unexpected one (e.g. the password hash leaking into the event).
+func TestAccountRegisteredJSONShape(t *testing.T) {
+	event := users.AccountRegistered{
+		Meta: envelope.Meta{
+			EventID:    "evt-2",
+			OccurredAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		},
+		UserID:    "user-1",
+		Email:     "manu@example.com",
+		Name:      "Manu",
+		CreatedAt: time.Date(2025, 12, 31, 23, 0, 0, 0, time.UTC),
+	}
+
+	body, err := json.Marshal(event)
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+
+	want := map[string]any{
+		"event_id":    "evt-2",
+		"occurred_at": "2026-01-01T00:00:00Z",
+		"user_id":     "user-1",
+		"email":       "manu@example.com",
+		"name":        "Manu",
+		"created_at":  "2025-12-31T23:00:00Z",
+	}
+	for key, wantValue := range want {
+		gotValue, ok := got[key]
+		if !ok {
+			t.Errorf("missing key %q in %s", key, body)
+			continue
+		}
+		if gotValue != wantValue {
+			t.Errorf("key %q = %v, want %v", key, gotValue, wantValue)
+		}
+	}
+	if len(got) != len(want) {
+		t.Errorf("got %d keys, want %d -- unexpected field in %s", len(got), len(want), body)
+	}
+}
+
+func TestAccountRegisteredRoundTrip(t *testing.T) {
+	in := users.AccountRegistered{
+		Meta:      envelope.Meta{EventID: "evt-3", OccurredAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)},
+		UserID:    "user-1",
+		Email:     "manu@example.com",
+		Name:      "Manu",
+		CreatedAt: time.Date(2025, 12, 31, 23, 0, 0, 0, time.UTC),
+	}
+	body, err := json.Marshal(in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out users.AccountRegistered
+	if err := json.Unmarshal(body, &out); err != nil {
+		t.Fatal(err)
+	}
+	if out != in {
+		t.Errorf("round trip = %+v, want %+v", out, in)
+	}
+}
+
 func TestRoutingKeys(t *testing.T) {
 	if users.RoutingKeyProfileUpdated != "users.profile_updated" {
 		t.Errorf("RoutingKeyProfileUpdated = %q", users.RoutingKeyProfileUpdated)
+	}
+	if users.RoutingKeyAccountRegistered != "users.account_registered" {
+		t.Errorf("RoutingKeyAccountRegistered = %q", users.RoutingKeyAccountRegistered)
 	}
 }

@@ -1,8 +1,30 @@
 package users
 
-import "github.com/discordia-grupo01/events-contract/envelope"
+import (
+	"time"
 
-const RoutingKeyProfileUpdated = "users.profile_updated"
+	"github.com/discordia-grupo01/events-contract/envelope"
+)
+
+const (
+	RoutingKeyProfileUpdated    = "users.profile_updated"
+	RoutingKeyAccountRegistered = "users.account_registered"
+)
+
+// AccountRegistered is published by identify once, when an account is created.
+// It carries the data of the account itself (as opposed to the public profile
+// of ProfileUpdated) for the one consumer that needs it: admin's back-office
+// listing, which searches users by email. Email and CreatedAt never change, so
+// there is no version: a repeated delivery is harmless because applying it
+// again leaves the same values. Do not add this event to consumers that only
+// need the public profile -- the email is private data.
+type AccountRegistered struct {
+	envelope.Meta
+	UserID    string    `json:"user_id"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
 
 // ProfileUpdated is published by identify when a user is created and every
 // time their public profile or status changes. It is a full snapshot, not a
