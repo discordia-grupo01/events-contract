@@ -39,6 +39,9 @@ admin/
   events.go       -- UserSuspended, UserReactivated (Go, publicados por admin,
                      firmados con HMAC: Sign/Verify)
   events_test.go
+  vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
+  events.ex       -- binding Elixir de referencia con sign/6 y verify/3
+                     (consumido por messaging y voice)
 users/
   events.go       -- ProfileUpdated, AccountRegistered (Go), publicados por identify
   events_test.go
