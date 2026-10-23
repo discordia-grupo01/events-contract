@@ -54,6 +54,11 @@ voice/
   events.go       -- voice.participants_joined, voice.participant_left (consume server)
   events.ex       -- Mensajes publicados por Elixir signaling
   events_test.go 
+messages/
+  events.go       -- MessageCreated (Go), publicado por messaging al crear un mensaje
+                     en un canal de servidor (sin el texto del mensaje)
+  events_test.go
+  events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
 
 Un ban publica, en la misma transacción, `servers.member_left` (de
@@ -185,11 +190,21 @@ CI ni en el build de Docker de los consumidores.
 
 ## Versionado
 
-Este repo no se despliega -- el "CD" es taguear:
+Este repo no se despliega -- el "CD" es taguear, y **el tag lo crea el CI solo**: cuando
+un merge llega a `main` y pasan los tests, el job `tag` de `.github/workflows/ci.yml` calcula
+la próxima versión, crea el tag y un GitHub Release con las notas generadas. No hay que hacerlo
+a mano.
+
+- Si algún commit desde el último tag empieza con `feat` / `[feat]` (o dice `BREAKING CHANGE`),
+  sube la **minor** (`v0.9.1` -> `v0.10.0`).
+- Si no (`fix`, `docs`, etc.), sube la **patch** (`v0.9.1` -> `v0.9.2`).
+- Si `HEAD` ya tiene tag, no hace nada.
+
+Para forzar un número distinto, se sigue pudiendo taguear a mano:
 
 ```bash
-git tag v0.3.0
-git push origin v0.3.0
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
 Los consumidores (`servers`, `identify-service`) fijan la versión en su
