@@ -24,3 +24,39 @@ jobs:
       - run: go build ./...
       - run: go vet ./...
       - run: go test ./... -cover
+
+  tag:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Crear el tag de la próxima versión
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --tags --force
+          if git tag --points-at HEAD | grep -q '^v'; then
+            echo "HEAD ya tiene tag: $(git tag --points-at HEAD | grep '^v')"
+            exit 0
+          fi
+          last=$(git tag --list 'v[0-9]*' --sort=-v:refname | head -n 1)
+          last=${last:-v0.0.0}
+          range="HEAD"
+          if [ "$last" != "v0.0.0" ]; then range="$last..HEAD"; fi
+          IFS=. read -r major minor patch <<< "${last#v}"
+          subjects=$(git log "$range" --format='%s%n%b')
+          if echo "$subjects" | grep -qiE '^\[?(feat|feature)\]?(\(.*\))?!?(:| )|BREAKING CHANGE'; then
+            minor=$((minor + 1)); patch=0
+          else
+            patch=$((patch + 1))
+          fi
+          next="v$major.$minor.$patch"
+          echo "$last -> $next"
+          git tag "$next"
+          git push origin "$next"
+          gh release create "$next" --title "$next" --generate-notes
