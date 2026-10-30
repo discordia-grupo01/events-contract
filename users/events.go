@@ -9,6 +9,7 @@ import (
 const (
 	RoutingKeyProfileUpdated    = "users.profile_updated"
 	RoutingKeyAccountRegistered = "users.account_registered"
+	RoutingKeyEmailVerified     = "users.email_verified"
 )
 
 // AccountRegistered is published by identify once, when an account is created.
@@ -18,12 +19,31 @@ const (
 // there is no version: a repeated delivery is harmless because applying it
 // again leaves the same values. Do not add this event to consumers that only
 // need the public profile -- the email is private data.
+//
+// EmailVerified is true when the account was born verified (OAuth sign-up)
+// and false for an email sign-up, which stays pending until EmailVerified
+// arrives. Events published before this field existed don't carry it, so
+// they decode as false.
 type AccountRegistered struct {
 	envelope.Meta
-	UserID    string    `json:"user_id"`
-	Email     string    `json:"email"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
+	UserID        string    `json:"user_id"`
+	Email         string    `json:"email"`
+	Name          string    `json:"name"`
+	CreatedAt     time.Time `json:"created_at"`
+	EmailVerified bool      `json:"email_verified"`
+}
+
+// EmailVerified is published by identify once, when the user confirms the
+// email of an account created with email sign-up (OAuth sign-ups never
+// publish it: they are already verified in AccountRegistered). Like
+// AccountRegistered it only exists for admin's back-office listing, which
+// shows unverified accounts as pending. Verification is never undone, so
+// there is no version: a repeated or out-of-order delivery is harmless, and
+// it may arrive before AccountRegistered.
+type EmailVerified struct {
+	envelope.Meta
+	UserID     string    `json:"user_id"`
+	VerifiedAt time.Time `json:"verified_at"`
 }
 
 // ProfileUpdated is published by identify when a user is created and every
