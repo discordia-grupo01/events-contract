@@ -107,6 +107,17 @@ viaja nunca" de `users.profile_updated`, y ningún otro consumidor debería
 suscribirse. `email` y `created_at` no cambian, así que no lleva `version`:
 aplicarlo dos veces deja los mismos valores. Para las cuentas que ya existían
 cuando se sumó el evento, identify re-publica uno por usuario (backfill).
+`email_verified` dice si la cuenta nació verificada (alta por OAuth); los
+eventos publicados antes de que existiera el campo no lo traen y valen `false`.
+
+`users.email_verified` lo publica identify una sola vez, cuando el usuario
+confirma el email de una cuenta creada con email (las altas por OAuth no lo
+publican). Como `users.account_registered`, existe únicamente para el listado
+del backoffice, que muestra como "pendiente" a quien todavía no confirmó. La
+verificación no se deshace, así que no lleva `version`: repetido o fuera de
+orden (incluso antes de `users.account_registered`) no rompe nada. Para las
+cuentas que ya estaban verificadas, identify re-publica uno por usuario
+(backfill).
 
 `servers.server_updated` (de `servers/`) es una foto completa del servidor
 (nombre, dueño y fecha de creación), no un diff: servers la publica al crear el
