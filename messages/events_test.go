@@ -15,6 +15,68 @@ func TestRoutingKey(t *testing.T) {
 	}
 }
 
+func TestDirectMessageRoutingKey(t *testing.T) {
+	if messages.RoutingKeyDirectMessageCreated != "messaging.direct_message_created" {
+		t.Fatalf("routing key = %q", messages.RoutingKeyDirectMessageCreated)
+	}
+}
+
+func TestDirectMessageCreatedJSONShape(t *testing.T) {
+	event := messages.DirectMessageCreated{
+		Meta: envelope.Meta{
+			EventID:    "evt-dm-1",
+			OccurredAt: time.Date(2026, 10, 31, 15, 0, 0, 0, time.UTC),
+		},
+		ConversationID: "conversation-1",
+		MessageID:      "message-1",
+		AuthorID:       "user-1",
+		RecipientID:    "user-2",
+	}
+
+	got := marshalToMap(t, event)
+
+	if len(got) != 6 {
+		t.Fatalf("got %d fields, want 6 in %v", len(got), got)
+	}
+	for key, want := range map[string]string{
+		"event_id":        "evt-dm-1",
+		"occurred_at":     "2026-10-31T15:00:00Z",
+		"conversation_id": "conversation-1",
+		"message_id":      "message-1",
+		"author_id":       "user-1",
+		"recipient_id":    "user-2",
+	} {
+		if got[key] != want {
+			t.Errorf("key %q = %v, want %v", key, got[key], want)
+		}
+	}
+}
+
+func TestDirectMessageCreatedRoundTrip(t *testing.T) {
+	want := messages.DirectMessageCreated{
+		Meta:           envelope.Meta{EventID: "evt-dm-2", OccurredAt: time.Date(2026, 10, 31, 15, 0, 0, 0, time.UTC)},
+		ConversationID: "conversation-1",
+		MessageID:      "message-2",
+		AuthorID:       "user-1",
+		RecipientID:    "user-2",
+	}
+
+	body, err := json.Marshal(want)
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+
+	var got messages.DirectMessageCreated
+	if err := json.Unmarshal(body, &got); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+
+	if got.EventID != want.EventID || !got.OccurredAt.Equal(want.OccurredAt) || got.ConversationID != want.ConversationID ||
+		got.MessageID != want.MessageID || got.AuthorID != want.AuthorID || got.RecipientID != want.RecipientID {
+		t.Errorf("round trip = %+v, want %+v", got, want)
+	}
+}
+
 func TestMessageCreatedJSONShape(t *testing.T) {
 	event := messages.MessageCreated{
 		Meta: envelope.Meta{

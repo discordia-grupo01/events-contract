@@ -55,8 +55,9 @@ voice/
   events.ex       -- Mensajes publicados por Elixir signaling
   events_test.go 
 messages/
-  events.go       -- MessageCreated (Go), publicado por messaging al crear un mensaje
-                     en un canal de servidor (sin el texto del mensaje)
+  events.go       -- MessageCreated y DirectMessageCreated (Go), publicados por messaging
+                     al crear un mensaje en un canal de servidor o en un mensaje directo
+                     (sin el texto del mensaje)
   events_test.go
   events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
