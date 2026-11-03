@@ -210,8 +210,9 @@ RabbitMQ no guarda lo que se publicó antes de que su cola existiera.
 `messaging.message_created` y `messaging.direct_message_created` llevan dos datos
 opcionales para armar las notificaciones push sin que `notifications` le pregunte
 nada a otro servicio: `content_preview` (el texto del mensaje cortado a unos 140
-caracteres, con las menciones `<@id>` reemplazadas por `@usuario` o `@rol`, y
-"Archivo adjunto" si el mensaje solo trae archivos) y, en el de canal,
+caracteres, con las menciones de rol reemplazadas por `@rol`, las de usuario dejadas como
+`<@id>` para que el consumidor ponga el nombre, y "Archivo adjunto" si el mensaje solo
+trae archivos) y, en el de canal,
 `channel_name`. Son opcionales y se omiten cuando están vacíos: un consumidor que
 no los conoce, o un evento publicado antes de que existieran, sigue funcionando
 igual. Son la única excepción a "los eventos llevan solo ids" (ADR 0007): el
