@@ -42,6 +42,13 @@ admin/
   vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
   events.ex       -- binding Elixir de referencia con sign/6 y verify/3
                      (consumido por messaging y voice)
+billing/
+  events.go       -- PremiumUpdated (Go, publicado por billing,
+                     firmado con HMAC: Sign/Verify)
+  events_test.go
+  vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
+  events.ex       -- binding Elixir de referencia con sign/8 y verify/2
+                     (consumido por messaging)
 users/
   events.go       -- ProfileUpdated, AccountRegistered (Go), publicados por identify
   events_test.go
@@ -55,8 +62,14 @@ voice/
   events.ex       -- Mensajes publicados por Elixir signaling
   events_test.go 
 messages/
-  events.go       -- MessageCreated (Go), publicado por messaging al crear un mensaje
-                     en un canal de servidor (sin el texto del mensaje)
+  events.go       -- MessageCreated y DirectMessageCreated (Go), publicados por messaging
+                     al crear un mensaje en un canal de servidor o en un mensaje directo
+                     (con un extracto del texto, solo para armar el push)
+  events_test.go
+  events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
+presence/
+  events.go       -- UserPresenceChanged (Go), publicado por messaging cuando cambia
+                     si el usuario tiene una conexión abierta y activa
   events_test.go
   events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
@@ -148,6 +161,21 @@ da falso. La firma es HMAC-SHA256 sobre la routing key, `event_id`, `user_id`,
 `version` y `occurred_at`; incluir la routing key evita reusar una suspensión
 válida como si fuera una reactivación. Un secreto vacío nunca verifica.
 
+`billing.premium_updated` (de `billing/`) es una foto completa del Premium de
+un usuario, no un diff: billing la publica cuando Premium empieza, se renueva,
+deja de renovarse, se revoca (devolución o contracargo) o vence, en la misma
+transacción que el cambio (outbox). El consumidor aplica `active`; cuando pasa
+`premium_until`, billing publica otra foto con `active = false`, así que nadie
+necesita un reloj. `premium_until` (null si nunca pagó) y `renews` son para
+mostrar. `version` crece con cada foto del mismo usuario y el consumidor la
+aplica solo si es mayor a la que ya tiene. Lo consumen identify (para el
+campo `premium` del perfil) y messaging (límite de adjuntos). Como los de
+`admin/`, va **firmado**: un evento falso regalaría Premium. billing y cada
+consumidor comparten `BILLING_EVENTS_HMAC_SECRET`; la firma es HMAC-SHA256
+sobre la routing key, `event_id`, `user_id`, `active`, `premium_until`,
+`renews`, `version` y `occurred_at`. `Sign` pasa las fechas a UTC para que el
+JSON lleve exactamente el texto firmado.
+
 `servers.word_filter_updated` (de `moderation/`) es la lista completa de
 palabras prohibidas de un servidor, no un diff: servers la publica en cada
 cambio (lista vacía si se borraron todas). `messaging` la usa para rechazar
@@ -173,6 +201,39 @@ miembros y de los overrides al recibir `servers.role_deleted`, y borrar un
 canal o un servidor arrastra sus overrides. Al sumar un consumidor nuevo hay
 que relanzar el backfill (migración de servers que re-publica todo) porque
 RabbitMQ no guarda lo que se publicó antes de que su cola existiera.
+
+`messaging.message_created` y `messaging.direct_message_created` llevan dos datos
+opcionales para armar las notificaciones push sin que `notifications` le pregunte
+nada a otro servicio: `content_preview` (el texto del mensaje cortado a unos 140
+caracteres, con las menciones `<@id>` reemplazadas por `@usuario` o `@rol`, y
+"Archivo adjunto" si el mensaje solo trae archivos) y, en el de canal,
+`channel_name`. Son opcionales y se omiten cuando están vacíos: un consumidor que
+no los conoce, o un evento publicado antes de que existieran, sigue funcionando
+igual. Son la única excepción a "los eventos llevan solo ids" (ADR 0007): el
+consumidor usa el texto para el aviso y no lo guarda.
+
+`messaging.message_updated` y `messaging.message_deleted` (de `messages/`) completan el
+ciclo de vida del mensaje para las notificaciones. `message_updated` se publica
+cuando cambia el texto de un mensaje de un canal de servidor y lleva las menciones
+que el mensaje tiene **después** de la edición (`mentioned_user_ids`), más
+`channel_name` y `content_preview` opcionales: el consumidor compara con lo que ya
+tenía, agrega a quien quedó mencionado y quita a quien dejó de estarlo.
+`message_deleted` se publica al borrar un mensaje de canal o directo (en un directo
+no lleva `server_id` y `channel_id` es la conversación): el consumidor descarta lo que
+guardó sobre `message_id`. En ambos, `occurred_at` es el momento de la edición o del
+borrado. Un push ya enviado no se puede retirar.
+
+`messaging.user_presence_changed` (de `presence/`) avisa que cambió lo que importa
+para decidir si se manda un push: `connections` es `active` si el usuario tiene al
+menos una conexión abierta y activa, `idle` si tiene conexiones pero todas están
+inactivas, y `none` si no tiene ninguna; `do_not_disturb` es `true` si eligió "No
+molestar". Es el estado **real** de las conexiones, sin importar que el usuario se
+muestre `invisible` a los demás. Cuenta todas sus conexiones, de cualquier
+instancia y dispositivo. `version` crece con cada cambio del mismo usuario y el
+consumidor aplica el evento solo si su `version` es mayor a la que ya tiene, así
+que un evento repetido o fuera de orden es inofensivo. Si el consumidor no tiene
+datos de un usuario, o están vencidos, debe asumir `none`. `do_not_disturb` se
+manda siempre, también cuando es `false`.
 
 Cada evento es un tipo con nombre propio (embebe los campos comunes, no los
 repite) -- así uno puede evolucionar sin arrastrar al otro (ej. agregarle
