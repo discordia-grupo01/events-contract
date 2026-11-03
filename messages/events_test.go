@@ -275,3 +275,120 @@ func marshalToMap(t *testing.T, event any) map[string]any {
 	}
 	return got
 }
+
+func TestMessageUpdatedAndDeletedRoutingKeys(t *testing.T) {
+	if messages.RoutingKeyMessageUpdated != "messaging.message_updated" {
+		t.Fatalf("routing key = %q", messages.RoutingKeyMessageUpdated)
+	}
+	if messages.RoutingKeyMessageDeleted != "messaging.message_deleted" {
+		t.Fatalf("routing key = %q", messages.RoutingKeyMessageDeleted)
+	}
+}
+
+func TestMessageUpdatedJSONShape(t *testing.T) {
+	event := messages.MessageUpdated{
+		Meta:             envelope.Meta{EventID: "evt-5", OccurredAt: time.Date(2026, 11, 3, 16, 0, 0, 0, time.UTC)},
+		ServerID:         "server-1",
+		ChannelID:        "channel-1",
+		MessageID:        "message-5",
+		AuthorID:         "user-1",
+		MentionedUserIDs: []string{"user-2"},
+		ChannelName:      "general",
+		ContentPreview:   "hola @usuario",
+	}
+
+	got := marshalToMap(t, event)
+
+	if len(got) != 9 {
+		t.Fatalf("got %d fields, want 9 in %v", len(got), got)
+	}
+	if got["message_id"] != "message-5" || got["content_preview"] != "hola @usuario" {
+		t.Errorf("message_id = %v, content_preview = %v", got["message_id"], got["content_preview"])
+	}
+}
+
+func TestMessageUpdatedOmitsOptionalFieldsAndKeepsAnEmptyMentionList(t *testing.T) {
+	event := messages.MessageUpdated{
+		Meta:             envelope.Meta{EventID: "evt-6", OccurredAt: time.Date(2026, 11, 3, 16, 0, 0, 0, time.UTC)},
+		ServerID:         "server-1",
+		ChannelID:        "channel-1",
+		MessageID:        "message-6",
+		AuthorID:         "user-1",
+		MentionedUserIDs: []string{},
+	}
+
+	got := marshalToMap(t, event)
+
+	if _, ok := got["channel_name"]; ok {
+		t.Errorf("channel_name should be omitted: %v", got)
+	}
+	if _, ok := got["content_preview"]; ok {
+		t.Errorf("content_preview should be omitted: %v", got)
+	}
+	if list, ok := got["mentioned_user_ids"].([]any); !ok || len(list) != 0 {
+		t.Errorf("mentioned_user_ids = %v, want an empty list", got["mentioned_user_ids"])
+	}
+}
+
+func TestMessageUpdatedRoundTrip(t *testing.T) {
+	want := messages.MessageUpdated{
+		Meta:             envelope.Meta{EventID: "evt-7", OccurredAt: time.Date(2026, 11, 3, 16, 0, 0, 0, time.UTC)},
+		ServerID:         "server-1",
+		ChannelID:        "channel-1",
+		MessageID:        "message-7",
+		AuthorID:         "user-1",
+		MentionedUserIDs: []string{"user-2", "user-3"},
+		ChannelName:      "general",
+		ContentPreview:   "hola",
+	}
+
+	raw, err := json.Marshal(want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got messages.MessageUpdated
+	if err := json.Unmarshal(raw, &got); err != nil {
+		t.Fatal(err)
+	}
+
+	if got.MessageID != want.MessageID || len(got.MentionedUserIDs) != 2 || got.ContentPreview != "hola" {
+		t.Errorf("round trip = %+v", got)
+	}
+}
+
+func TestMessageDeletedJSONShape(t *testing.T) {
+	event := messages.MessageDeleted{
+		Meta:      envelope.Meta{EventID: "evt-8", OccurredAt: time.Date(2026, 11, 3, 17, 0, 0, 0, time.UTC)},
+		ServerID:  "server-1",
+		ChannelID: "channel-1",
+		MessageID: "message-8",
+		AuthorID:  "user-1",
+	}
+
+	got := marshalToMap(t, event)
+
+	if len(got) != 6 {
+		t.Fatalf("got %d fields, want 6 in %v", len(got), got)
+	}
+	if got["message_id"] != "message-8" || got["server_id"] != "server-1" {
+		t.Errorf("message_id = %v, server_id = %v", got["message_id"], got["server_id"])
+	}
+}
+
+func TestMessageDeletedOfADirectMessageHasNoServer(t *testing.T) {
+	event := messages.MessageDeleted{
+		Meta:      envelope.Meta{EventID: "evt-9", OccurredAt: time.Date(2026, 11, 3, 17, 0, 0, 0, time.UTC)},
+		ChannelID: "conversation-1",
+		MessageID: "message-9",
+		AuthorID:  "user-1",
+	}
+
+	got := marshalToMap(t, event)
+
+	if _, ok := got["server_id"]; ok {
+		t.Errorf("server_id should be omitted: %v", got)
+	}
+	if len(got) != 5 {
+		t.Fatalf("got %d fields, want 5 in %v", len(got), got)
+	}
+}

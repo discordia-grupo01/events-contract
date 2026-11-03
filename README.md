@@ -190,6 +190,17 @@ no los conoce, o un evento publicado antes de que existieran, sigue funcionando
 igual. Son la única excepción a "los eventos llevan solo ids" (ADR 0007): el
 consumidor usa el texto para el aviso y no lo guarda.
 
+`messaging.message_updated` y `messaging.message_deleted` (de `messages/`) completan el
+ciclo de vida del mensaje para las notificaciones. `message_updated` se publica
+cuando cambia el texto de un mensaje de un canal de servidor y lleva las menciones
+que el mensaje tiene **después** de la edición (`mentioned_user_ids`), más
+`channel_name` y `content_preview` opcionales: el consumidor compara con lo que ya
+tenía, agrega a quien quedó mencionado y quita a quien dejó de estarlo.
+`message_deleted` se publica al borrar un mensaje de canal o directo (en un directo
+no lleva `server_id` y `channel_id` es la conversación): el consumidor descarta lo que
+guardó sobre `message_id`. En ambos, `occurred_at` es el momento de la edición o del
+borrado. Un push ya enviado no se puede retirar.
+
 `messaging.user_presence_changed` (de `presence/`) avisa que cambió lo que importa
 para decidir si se manda un push: `connections` es `active` si el usuario tiene al
 menos una conexión abierta y activa, `idle` si tiene conexiones pero todas están
