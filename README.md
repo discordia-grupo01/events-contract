@@ -42,6 +42,13 @@ admin/
   vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
   events.ex       -- binding Elixir de referencia con sign/6 y verify/3
                      (consumido por messaging y voice)
+billing/
+  events.go       -- PremiumUpdated (Go, publicado por billing,
+                     firmado con HMAC: Sign/Verify)
+  events_test.go
+  vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
+  events.ex       -- binding Elixir de referencia con sign/8 y verify/2
+                     (consumido por messaging)
 users/
   events.go       -- ProfileUpdated, AccountRegistered (Go), publicados por identify
   events_test.go
@@ -153,6 +160,21 @@ publicar y el consumidor descarta (sin reencolar) todo evento cuyo `Verify(secre
 da falso. La firma es HMAC-SHA256 sobre la routing key, `event_id`, `user_id`,
 `version` y `occurred_at`; incluir la routing key evita reusar una suspensión
 válida como si fuera una reactivación. Un secreto vacío nunca verifica.
+
+`billing.premium_updated` (de `billing/`) es una foto completa del Premium de
+un usuario, no un diff: billing la publica cuando Premium empieza, se renueva,
+deja de renovarse, se revoca (devolución o contracargo) o vence, en la misma
+transacción que el cambio (outbox). El consumidor aplica `active`; cuando pasa
+`premium_until`, billing publica otra foto con `active = false`, así que nadie
+necesita un reloj. `premium_until` (null si nunca pagó) y `renews` son para
+mostrar. `version` crece con cada foto del mismo usuario y el consumidor la
+aplica solo si es mayor a la que ya tiene. Lo consumen identify (para el
+campo `premium` del perfil) y messaging (límite de adjuntos). Como los de
+`admin/`, va **firmado**: un evento falso regalaría Premium. billing y cada
+consumidor comparten `BILLING_EVENTS_HMAC_SECRET`; la firma es HMAC-SHA256
+sobre la routing key, `event_id`, `user_id`, `active`, `premium_until`,
+`renews`, `version` y `occurred_at`. `Sign` pasa las fechas a UTC para que el
+JSON lleve exactamente el texto firmado.
 
 `servers.word_filter_updated` (de `moderation/`) es la lista completa de
 palabras prohibidas de un servidor, no un diff: servers la publica en cada
