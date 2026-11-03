@@ -60,6 +60,11 @@ messages/
                      (con un extracto del texto, solo para armar el push)
   events_test.go
   events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
+presence/
+  events.go       -- UserPresenceChanged (Go), publicado por messaging cuando cambia
+                     si el usuario tiene una conexión abierta y activa
+  events_test.go
+  events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
 
 Un ban publica, en la misma transacción, `servers.member_left` (de
@@ -184,6 +189,18 @@ caracteres, con las menciones `<@id>` reemplazadas por `@usuario` o `@rol`, y
 no los conoce, o un evento publicado antes de que existieran, sigue funcionando
 igual. Son la única excepción a "los eventos llevan solo ids" (ADR 0007): el
 consumidor usa el texto para el aviso y no lo guarda.
+
+`messaging.user_presence_changed` (de `presence/`) avisa que cambió lo que importa
+para decidir si se manda un push: `connections` es `active` si el usuario tiene al
+menos una conexión abierta y activa, `idle` si tiene conexiones pero todas están
+inactivas, y `none` si no tiene ninguna; `do_not_disturb` es `true` si eligió "No
+molestar". Es el estado **real** de las conexiones, sin importar que el usuario se
+muestre `invisible` a los demás. Cuenta todas sus conexiones, de cualquier
+instancia y dispositivo. `version` crece con cada cambio del mismo usuario y el
+consumidor aplica el evento solo si su `version` es mayor a la que ya tiene, así
+que un evento repetido o fuera de orden es inofensivo. Si el consumidor no tiene
+datos de un usuario, o están vencidos, debe asumir `none`. `do_not_disturb` se
+manda siempre, también cuando es `false`.
 
 Cada evento es un tipo con nombre propio (embebe los campos comunes, no los
 repite) -- así uno puede evolucionar sin arrastrar al otro (ej. agregarle
