@@ -36,12 +36,17 @@ servers/
   events_test.go
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 admin/
-  events.go       -- UserSuspended, UserReactivated (Go, publicados por admin,
-                     firmados con HMAC: Sign/Verify)
+  events.go       -- UserSuspended, UserReactivated, ServerSuspended,
+                     ServerReactivated, ServerDeletionRequested (Go, publicados
+                     por admin, firmados con HMAC: Sign/Verify). El sujeto firmado
+                     es user_id en los de cuenta y server_id en los de servidor
   events_test.go
   vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
   events.ex       -- binding Elixir de referencia con sign/6 y verify/3
-                     (consumido por messaging y voice)
+                     (consumido por messaging y voice); verify/3 lee user_id o
+                     server_id según la routing key
+  events_test.exs -- los mismos vectores en Elixir (ExUnit), más los rechazos de verify/3
+  test_helper.exs
 billing/
   events.go       -- PremiumUpdated (Go, publicado por billing,
                      firmado con HMAC: Sign/Verify)
@@ -259,6 +264,18 @@ publisher.Publish(ctx, membership.RoutingKeyMemberJoined, membership.MemberJoine
 
 Como el repo es público, `go get` no necesita token ni `GOPRIVATE` -- ni en
 CI ni en el build de Docker de los consumidores.
+
+## Tests
+
+```bash
+go test ./... -cover   # structs Go y vectores de firma
+mix test               # binding Elixir de admin (mix.exs mínimo, sin dependencias)
+```
+
+Los vectores de firma de `admin/vectors_test.go` y `admin/events_test.exs` son
+los mismos: si el texto firmado cambia, los dos se rompen y las copias de
+`messaging` y `voice` tienen que cambiar con ellos. El CI corre Go y Elixir
+(OTP 26.2, Elixir 1.16.2) y no etiqueta una versión nueva si falla alguno.
 
 ## Versionado
 
