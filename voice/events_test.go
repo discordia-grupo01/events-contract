@@ -16,6 +16,35 @@ func TestRoutingKeys(t *testing.T) {
 	if voice.RoutingKeyParticipantLeft != "voice.participant_left" {
 		t.Fatalf("left routing key = %q", voice.RoutingKeyParticipantLeft)
 	}
+	if voice.RoutingKeyPrivateCall != "voice.private_call" {
+		t.Fatalf("private call routing key = %q", voice.RoutingKeyPrivateCall)
+	}
+}
+
+func TestPrivateCallJSONShape(t *testing.T) {
+	event := voice.PrivateCall{
+		Meta: envelope.Meta{
+			EventID:    "evt-call",
+			OccurredAt: time.Date(2026, 11, 3, 19, 26, 0, 0, time.UTC),
+		},
+		EventType:      voice.RoutingKeyPrivateCall,
+		CallID:         "call-1",
+		ConversationID: "conversation-1",
+		CallerID:       "caller-1",
+		RecipientID:    "recipient-1",
+		Status:         "ringing",
+	}
+
+	assertJSONShape(t, event, map[string]any{
+		"event_id":        "evt-call",
+		"event_type":      "voice.private_call",
+		"occurred_at":     "2026-11-03T19:26:00Z",
+		"call_id":         "call-1",
+		"conversation_id": "conversation-1",
+		"caller_id":       "caller-1",
+		"recipient_id":    "recipient-1",
+		"status":          "ringing",
+	})
 }
 
 func TestParticipantJoinedJSONShape(t *testing.T) {
