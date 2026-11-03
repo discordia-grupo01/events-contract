@@ -14,6 +14,8 @@ type MessageCreated struct {
 	MessageID        string   `json:"message_id"`
 	AuthorID         string   `json:"author_id"`
 	MentionedUserIDs []string `json:"mentioned_user_ids"`
+	ChannelName      string   `json:"channel_name,omitempty"`
+	ContentPreview   string   `json:"content_preview,omitempty"`
 }
 
 type DirectMessageCreated struct {
@@ -22,4 +24,5 @@ type DirectMessageCreated struct {
 	MessageID      string `json:"message_id"`
 	AuthorID       string `json:"author_id"`
 	RecipientID    string `json:"recipient_id"`
+	ContentPreview string `json:"content_preview,omitempty"`
 }

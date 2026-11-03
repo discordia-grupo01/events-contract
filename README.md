@@ -57,7 +57,7 @@ voice/
 messages/
   events.go       -- MessageCreated y DirectMessageCreated (Go), publicados por messaging
                      al crear un mensaje en un canal de servidor o en un mensaje directo
-                     (sin el texto del mensaje)
+                     (con un extracto del texto, solo para armar el push)
   events_test.go
   events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
@@ -174,6 +174,16 @@ miembros y de los overrides al recibir `servers.role_deleted`, y borrar un
 canal o un servidor arrastra sus overrides. Al sumar un consumidor nuevo hay
 que relanzar el backfill (migración de servers que re-publica todo) porque
 RabbitMQ no guarda lo que se publicó antes de que su cola existiera.
+
+`messaging.message_created` y `messaging.direct_message_created` llevan dos datos
+opcionales para armar las notificaciones push sin que `notifications` le pregunte
+nada a otro servicio: `content_preview` (el texto del mensaje cortado a unos 140
+caracteres, con las menciones `<@id>` reemplazadas por `@usuario` o `@rol`, y
+"Archivo adjunto" si el mensaje solo trae archivos) y, en el de canal,
+`channel_name`. Son opcionales y se omiten cuando están vacíos: un consumidor que
+no los conoce, o un evento publicado antes de que existieran, sigue funcionando
+igual. Son la única excepción a "los eventos llevan solo ids" (ADR 0007): el
+consumidor usa el texto para el aviso y no lo guarda.
 
 Cada evento es un tipo con nombre propio (embebe los campos comunes, no los
 repite) -- así uno puede evolucionar sin arrastrar al otro (ej. agregarle

@@ -24,7 +24,9 @@ defmodule Discordia.EventsContract.Messages do
       :channel_id,
       :message_id,
       :author_id,
-      :mentioned_user_ids
+      :mentioned_user_ids,
+      :channel_name,
+      :content_preview
     ]
   end
 
@@ -43,7 +45,8 @@ defmodule Discordia.EventsContract.Messages do
       :conversation_id,
       :message_id,
       :author_id,
-      :recipient_id
+      :recipient_id,
+      :content_preview
     ]
   end
 end
