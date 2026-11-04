@@ -157,6 +157,11 @@ cada suspensión o reactivación del mismo usuario y el consumidor aplica el
 evento solo si es mayor a la que ya tiene, así que un evento repetido o fuera
 de orden es inofensivo. El motivo de la suspensión no viaja.
 
+`admin.staff_member_added` y `admin.staff_member_removed` sincronizan la
+proyección local de autorización de los servicios que necesitan validar staff.
+También llevan firma HMAC y deben verificarse antes de actualizar la
+proyección.
+
 Son los únicos eventos **firmados**: una suspensión falsa dejaría a cualquiera
 sin acceso y RabbitMQ no impide que otro cliente con credenciales del broker
 publique una routing key `admin.*`. `admin` y cada consumidor comparten

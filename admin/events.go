@@ -28,7 +28,37 @@ const (
 	RoutingKeyServerSuspended         = "admin.server_suspended"
 	RoutingKeyServerReactivated       = "admin.server_reactivated"
 	RoutingKeyServerDeletionRequested = "admin.server_deletion_requested"
+	RoutingKeyStaffMemberAdded        = "admin.staff_member_added"
+	RoutingKeyStaffMemberRemoved      = "admin.staff_member_removed"
 )
+
+type StaffMemberAdded struct {
+	envelope.Meta
+	UserID    string `json:"user_id"`
+	Signature string `json:"signature"`
+}
+
+type StaffMemberRemoved struct {
+	envelope.Meta
+	UserID    string `json:"user_id"`
+	Signature string `json:"signature"`
+}
+
+func (e *StaffMemberAdded) Sign(secret string) {
+	e.Signature = signStaff(secret, RoutingKeyStaffMemberAdded, e.Meta, e.UserID)
+}
+
+func (e StaffMemberAdded) Verify(secret string) bool {
+	return verifyStaff(secret, RoutingKeyStaffMemberAdded, e.Meta, e.UserID, e.Signature)
+}
+
+func (e *StaffMemberRemoved) Sign(secret string) {
+	e.Signature = signStaff(secret, RoutingKeyStaffMemberRemoved, e.Meta, e.UserID)
+}
+
+func (e StaffMemberRemoved) Verify(secret string) bool {
+	return verifyStaff(secret, RoutingKeyStaffMemberRemoved, e.Meta, e.UserID, e.Signature)
+}
 
 // UserSuspended is published by admin when staff suspends an account. Every
 // service that serves users (identify, servers, messaging, voice) reacts by
@@ -174,9 +204,33 @@ func verify(secret, routingKey string, meta envelope.Meta, subjectID string, ver
 	if secret == "" || got == "" {
 		return false
 	}
+
 	gotBytes, err := hex.DecodeString(got)
 	if err != nil {
 		return false
 	}
 	return hmac.Equal(gotBytes, signature(secret, routingKey, meta, subjectID, version))
+}
+
+func signStaff(secret, routingKey string, meta envelope.Meta, userID string) string {
+	return hex.EncodeToString(staffSignature(secret, routingKey, meta, userID))
+}
+
+func verifyStaff(secret, routingKey string, meta envelope.Meta, userID, got string) bool {
+	if secret == "" || got == "" {
+		return false
+	}
+	gotBytes, err := hex.DecodeString(got)
+	if err != nil {
+		return false
+	}
+	return hmac.Equal(gotBytes, staffSignature(secret, routingKey, meta, userID))
+}
+
+func staffSignature(secret, routingKey string, meta envelope.Meta, userID string) []byte {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(strings.Join([]string{
+		routingKey, meta.EventID, userID, meta.OccurredAt.UTC().Format(time.RFC3339Nano),
+	}, "\n")))
+	return mac.Sum(nil)
 }
