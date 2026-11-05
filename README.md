@@ -32,7 +32,8 @@ moderation/
                      MemberUnmuted, WordFilterUpdated (Go)
   events_test.go
 servers/
-  events.go       -- ServerDeleted, ServerUpdated (Go, publicados por servers)
+  events.go       -- ServerDeleted, ServerUpdated, EmojiCreated, EmojiDeleted
+                     (Go, publicados por servers)
   events_test.go
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 admin/
@@ -150,6 +151,14 @@ servidores sin preguntarle a servers; el número de miembros lo calcula con
 `servers.member_joined` y `servers.member_left`. Al sumar el consumidor hay que
 relanzar el backfill de servers, porque RabbitMQ no guarda lo publicado antes
 de que existiera su cola.
+
+`servers.emoji_created` y `servers.emoji_deleted` (de `servers/`) llevan los
+mismos datos: el emoji completo. Un emoji no cambia después de crearse, así que
+no hace falta `version`: su única transición es borrarse, y el borrado gana en
+cualquier orden, aunque el alta llegue después. Borrar un emoji impide usarlo en
+mensajes y reacciones nuevos, pero la imagen se conserva para que el contenido
+histórico la siga mostrando. Los consume `messaging` (cola
+`messaging.server_emojis`) para validar los emojis sin preguntarle a servers.
 
 `admin.user_suspended` y `admin.user_reactivated` (de `admin/`) los publica
 `admin` cuando el staff suspende o reactiva una cuenta, en la misma
