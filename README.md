@@ -55,6 +55,11 @@ billing/
   vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
   events.ex       -- binding Elixir de referencia con sign/8 y verify/2
                      (consumido por messaging)
+boosts/
+  events.go       -- SagaEvent (firmado con HMAC: Sign/Verify) y ServerBoostUpdated (Go),
+                     publicados por billing y servers
+  events_test.go
+  events.ex       -- ServerBoostUpdated en Elixir (consumido por messaging)
 users/
   events.go       -- ProfileUpdated, AccountRegistered (Go), publicados por identify
   events_test.go
@@ -197,6 +202,27 @@ consumidor comparten `BILLING_EVENTS_HMAC_SECRET`; la firma es HMAC-SHA256
 sobre la routing key, `event_id`, `user_id`, `active`, `premium_until`,
 `renews`, `version` y `occurred_at`. `Sign` pasa las fechas a UTC para que el
 JSON lleve exactamente el texto firmado.
+
+Los eventos de `boosts/` son una saga entre billing y servers: billing es dueño
+de los puntos, y servers de los miembros, la suspensión y el nivel. billing
+reserva los puntos y publica `billing.server_boost_requested`; servers responde
+`servers.server_boost_applied` o `servers.server_boost_rejected` con un `reason`,
+y en ese caso billing devuelve los puntos. Solo una regla de negocio rechaza: un
+error técnico reencola el evento. Si servers no responde en 24 horas, billing
+devuelve los puntos y publica `billing.server_boost_cancelled`.
+`billing.server_boost_removed` es el retiro del dueño, sin devolución. Procesar
+un evento dos veces no tiene efecto, porque `boost_id` identifica el boost en los
+dos lados.
+
+Esos cinco van **firmados** con `BILLING_EVENTS_HMAC_SECRET`, porque un rechazo
+falso regalaría puntos. La firma es HMAC-SHA256 sobre la routing key, `event_id`,
+`boost_id`, `server_id`, `user_id`, `reason` y `occurred_at`; incluir la routing
+key evita reusar un `applied` válido como si fuera un `removed`.
+
+`servers.server_boost_updated` es una foto del servidor (`boost_count`, `level`,
+`version`), no un diff, y el consumidor la aplica solo si `version` es mayor a la
+que ya tiene. La consume `messaging` (cola `messaging.server_boosts`) para el
+límite de adjuntos del nivel. No va firmada, como el resto de `servers.*`.
 
 `servers.word_filter_updated` (de `moderation/`) es la lista completa de
 palabras prohibidas de un servidor, no un diff: servers la publica en cada
