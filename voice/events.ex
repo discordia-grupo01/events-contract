@@ -18,7 +18,10 @@ defmodule Discordia.EventsContract.Voice do
       :conversation_id,
       :caller_id,
       :recipient_id,
-      :status
+      :room_name,
+      :status,
+      :reason,
+      :ended_by
     ]
   end
 

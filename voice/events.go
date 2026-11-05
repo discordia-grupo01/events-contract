@@ -15,7 +15,10 @@ type PrivateCall struct {
 	ConversationID string `json:"conversation_id"`
 	CallerID       string `json:"caller_id"`
 	RecipientID    string `json:"recipient_id"`
+	RoomName       string `json:"room_name,omitempty"`
 	Status         string `json:"status"`
+	Reason         string `json:"reason,omitempty"`
+	EndedBy        string `json:"ended_by,omitempty"`
 }
 
 type ParticipantJoined struct {

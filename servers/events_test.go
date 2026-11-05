@@ -111,11 +111,57 @@ func TestServerUpdatedJSONShape(t *testing.T) {
 	}
 }
 
+func TestEmojiEventsJSONShape(t *testing.T) {
+	meta := envelope.Meta{
+		EventID:    "evt-1",
+		OccurredAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+	cases := map[string]any{
+		"created": servers.EmojiCreated{
+			Meta: meta, EmojiID: "emoji-1", ServerID: "server-1", Name: "party", Animated: true, ImageURL: "https://cdn.test/party.gif",
+		},
+		"deleted": servers.EmojiDeleted{
+			Meta: meta, EmojiID: "emoji-1", ServerID: "server-1", Name: "party", Animated: true, ImageURL: "https://cdn.test/party.gif",
+		},
+	}
+	want := map[string]any{
+		"event_id":    "evt-1",
+		"occurred_at": "2026-01-01T00:00:00Z",
+		"emoji_id":    "emoji-1",
+		"server_id":   "server-1",
+		"name":        "party",
+		"animated":    true,
+		"image_url":   "https://cdn.test/party.gif",
+	}
+
+	for name, event := range cases {
+		t.Run(name, func(t *testing.T) {
+			body, err := json.Marshal(event)
+			if err != nil {
+				t.Fatalf("Marshal() error = %v", err)
+			}
+			var got map[string]any
+			if err := json.Unmarshal(body, &got); err != nil {
+				t.Fatalf("Unmarshal() error = %v", err)
+			}
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("got %v, want %v", got, want)
+			}
+		})
+	}
+}
+
 func TestRoutingKey(t *testing.T) {
 	if servers.RoutingKeyServerDeleted != "servers.server_deleted" {
 		t.Errorf("RoutingKeyServerDeleted = %q", servers.RoutingKeyServerDeleted)
 	}
 	if servers.RoutingKeyServerUpdated != "servers.server_updated" {
 		t.Errorf("RoutingKeyServerUpdated = %q", servers.RoutingKeyServerUpdated)
+	}
+	if servers.RoutingKeyEmojiCreated != "servers.emoji_created" {
+		t.Errorf("RoutingKeyEmojiCreated = %q", servers.RoutingKeyEmojiCreated)
+	}
+	if servers.RoutingKeyEmojiDeleted != "servers.emoji_deleted" {
+		t.Errorf("RoutingKeyEmojiDeleted = %q", servers.RoutingKeyEmojiDeleted)
 	}
 }

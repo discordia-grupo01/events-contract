@@ -32,6 +32,8 @@ defmodule Discordia.EventsContract.Admin do
 
   @routing_key_user_suspended "admin.user_suspended"
   @routing_key_user_reactivated "admin.user_reactivated"
+  @routing_key_staff_member_added "admin.staff_member_added"
+  @routing_key_staff_member_removed "admin.staff_member_removed"
   @routing_key_server_suspended "admin.server_suspended"
   @routing_key_server_reactivated "admin.server_reactivated"
   @routing_key_server_deletion_requested "admin.server_deletion_requested"
@@ -41,6 +43,30 @@ defmodule Discordia.EventsContract.Admin do
   def routing_key_server_suspended, do: @routing_key_server_suspended
   def routing_key_server_reactivated, do: @routing_key_server_reactivated
   def routing_key_server_deletion_requested, do: @routing_key_server_deletion_requested
+  def routing_key_staff_member_added, do: @routing_key_staff_member_added
+  def routing_key_staff_member_removed, do: @routing_key_staff_member_removed
+
+  defmodule StaffMemberAdded do
+    @type t :: %__MODULE__{
+            event_id: String.t(),
+            occurred_at: String.t(),
+            user_id: String.t(),
+            signature: String.t()
+          }
+
+    defstruct [:event_id, :occurred_at, :user_id, :signature]
+  end
+
+  defmodule StaffMemberRemoved do
+    @type t :: %__MODULE__{
+            event_id: String.t(),
+            occurred_at: String.t(),
+            user_id: String.t(),
+            signature: String.t()
+          }
+
+    defstruct [:event_id, :occurred_at, :user_id, :signature]
+  end
 
   defmodule UserSuspended do
     @moduledoc "Published when staff suspends an account. Same fields as `UserReactivated`."

@@ -32,7 +32,8 @@ moderation/
                      MemberUnmuted, WordFilterUpdated (Go)
   events_test.go
 servers/
-  events.go       -- ServerDeleted, ServerUpdated (Go, publicados por servers)
+  events.go       -- ServerDeleted, ServerUpdated, EmojiCreated, EmojiDeleted
+                     (Go, publicados por servers)
   events_test.go
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 admin/
@@ -75,6 +76,9 @@ messages/
 presence/
   events.go       -- UserPresenceChanged (Go), publicado por messaging cuando cambia
                      si el usuario tiene una conexión abierta y activa
+platform/
+  events.go       -- StatusChanged (Go), publicado por metrics para que
+                     notifications difunda un aviso y los clientes hagan fetch
   events_test.go
   events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
@@ -148,6 +152,14 @@ servidores sin preguntarle a servers; el número de miembros lo calcula con
 relanzar el backfill de servers, porque RabbitMQ no guarda lo publicado antes
 de que existiera su cola.
 
+`servers.emoji_created` y `servers.emoji_deleted` (de `servers/`) llevan los
+mismos datos: el emoji completo. Un emoji no cambia después de crearse, así que
+no hace falta `version`: su única transición es borrarse, y el borrado gana en
+cualquier orden, aunque el alta llegue después. Borrar un emoji impide usarlo en
+mensajes y reacciones nuevos, pero la imagen se conserva para que el contenido
+histórico la siga mostrando. Los consume `messaging` (cola
+`messaging.server_emojis`) para validar los emojis sin preguntarle a servers.
+
 `admin.user_suspended` y `admin.user_reactivated` (de `admin/`) los publica
 `admin` cuando el staff suspende o reactiva una cuenta, en la misma
 transacción que el cambio (outbox). Los consumen identify (revoca los refresh
@@ -156,6 +168,11 @@ acción del usuario y cortan sus sockets y su sala de voz). `version` crece con
 cada suspensión o reactivación del mismo usuario y el consumidor aplica el
 evento solo si es mayor a la que ya tiene, así que un evento repetido o fuera
 de orden es inofensivo. El motivo de la suspensión no viaja.
+
+`admin.staff_member_added` y `admin.staff_member_removed` sincronizan la
+proyección local de autorización de los servicios que necesitan validar staff.
+También llevan firma HMAC y deben verificarse antes de actualizar la
+proyección.
 
 Son los únicos eventos **firmados**: una suspensión falsa dejaría a cualquiera
 sin acceso y RabbitMQ no impide que otro cliente con credenciales del broker
