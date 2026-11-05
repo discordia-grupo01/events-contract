@@ -9,6 +9,8 @@ import (
 const (
 	RoutingKeyServerDeleted = "servers.server_deleted"
 	RoutingKeyServerUpdated = "servers.server_updated"
+	RoutingKeyEmojiCreated  = "servers.emoji_created"
+	RoutingKeyEmojiDeleted  = "servers.emoji_deleted"
 )
 
 type ServerDeleted struct {
@@ -30,4 +32,30 @@ type ServerUpdated struct {
 	Name      string    `json:"name"`
 	OwnerID   string    `json:"owner_id"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+// EmojiCreated is published by servers when a custom emoji is added to a server.
+// Like EmojiDeleted, it carries the whole emoji: an emoji never changes after it
+// is created, so its only transition is being deleted, and that transition wins
+// whatever order the two events arrive in.
+type EmojiCreated struct {
+	envelope.Meta
+	EmojiID  string `json:"emoji_id"`
+	ServerID string `json:"server_id"`
+	Name     string `json:"name"`
+	Animated bool   `json:"animated"`
+	ImageURL string `json:"image_url"`
+}
+
+// EmojiDeleted is published by servers when a custom emoji is deleted. It can no
+// longer be used in new messages or reactions, but the image stays available:
+// consumers keep it so the messages and reactions that already use it still show
+// it.
+type EmojiDeleted struct {
+	envelope.Meta
+	EmojiID  string `json:"emoji_id"`
+	ServerID string `json:"server_id"`
+	Name     string `json:"name"`
+	Animated bool   `json:"animated"`
+	ImageURL string `json:"image_url"`
 }
