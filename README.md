@@ -82,8 +82,8 @@ presence/
   events.go       -- UserPresenceChanged (Go), publicado por messaging cuando cambia
                      si el usuario tiene una conexión abierta y activa
 platform/
-  events.go       -- StatusChanged (Go), publicado por metrics para que
-                     notifications difunda un aviso y los clientes hagan fetch
+  events.go       -- StatusChanged y HealthChanged (Go), publicados por metrics
+                     para que notifications difunda avisos a clientes
   events_test.go
   events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
