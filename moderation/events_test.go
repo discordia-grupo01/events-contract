@@ -115,6 +115,44 @@ func TestMemberUnmutedJSONShape(t *testing.T) {
 	})
 }
 
+func TestModerationActionRecordedJSONShape(t *testing.T) {
+	event := moderation.ModerationActionRecorded{
+		Meta: envelope.Meta{
+			EventID:    "evt-7",
+			OccurredAt: time.Date(2026, 1, 7, 12, 30, 0, 0, time.UTC),
+		},
+		ActionID:     "action-1",
+		ServerID:     "server-1",
+		Action:       moderation.ActionBan,
+		TargetUserID: "user-1",
+	}
+
+	assertJSONShape(t, event, map[string]string{
+		"event_id":       "evt-7",
+		"occurred_at":    "2026-01-07T12:30:00Z",
+		"action_id":      "action-1",
+		"server_id":      "server-1",
+		"action":         "ban",
+		"target_user_id": "user-1",
+	})
+}
+
+// TestActionConstants pins the action texts: they must match the ones servers
+// stores in its moderation audit log.
+func TestActionConstants(t *testing.T) {
+	for name, tc := range map[string]struct{ got, want string }{
+		"ActionBan":    {moderation.ActionBan, "ban"},
+		"ActionUnban":  {moderation.ActionUnban, "unban"},
+		"ActionKick":   {moderation.ActionKick, "kick"},
+		"ActionMute":   {moderation.ActionMute, "mute"},
+		"ActionUnmute": {moderation.ActionUnmute, "unmute"},
+	} {
+		if tc.got != tc.want {
+			t.Errorf("%s = %q, want %q", name, tc.got, tc.want)
+		}
+	}
+}
+
 func TestRoutingKeys(t *testing.T) {
 	if moderation.RoutingKeyMemberBanned != "servers.member_banned" {
 		t.Errorf("RoutingKeyMemberBanned = %q", moderation.RoutingKeyMemberBanned)
@@ -133,6 +171,9 @@ func TestRoutingKeys(t *testing.T) {
 	}
 	if moderation.RoutingKeyWordFilterUpdated != "servers.word_filter_updated" {
 		t.Errorf("RoutingKeyWordFilterUpdated = %q", moderation.RoutingKeyWordFilterUpdated)
+	}
+	if moderation.RoutingKeyModerationActionRecorded != "servers.moderation_action_recorded" {
+		t.Errorf("RoutingKeyModerationActionRecorded = %q", moderation.RoutingKeyModerationActionRecorded)
 	}
 }
 

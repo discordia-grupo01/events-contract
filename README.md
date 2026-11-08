@@ -29,7 +29,11 @@ channels/
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 moderation/
   events.go       -- MemberBanned, MemberUnbanned, MemberKicked, MemberMuted,
-                     MemberUnmuted, WordFilterUpdated (Go)
+                     MemberUnmuted, WordFilterUpdated, ModerationActionRecorded (Go)
+  events_test.go
+reports/
+  events.go       -- ReportUpdated (Go, publicado por servers, consumido por admin
+                     para el expediente de investigación)
   events_test.go
 servers/
   events.go       -- ServerDeleted, ServerUpdated, EmojiCreated, EmojiDeleted
@@ -82,8 +86,8 @@ presence/
   events.go       -- UserPresenceChanged (Go), publicado por messaging cuando cambia
                      si el usuario tiene una conexión abierta y activa
 platform/
-  events.go       -- StatusChanged (Go), publicado por metrics para que
-                     notifications difunda un aviso y los clientes hagan fetch
+  events.go       -- StatusChanged y HealthChanged (Go), publicados por metrics
+                     para que notifications difunda avisos a clientes
   events_test.go
   events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
 ```
@@ -229,6 +233,22 @@ palabras prohibidas de un servidor, no un diff: servers la publica en cada
 cambio (lista vacía si se borraron todas). `messaging` la usa para rechazar
 mensajes que las contengan; se queda con la de `occurred_at` más nuevo, así
 que un evento repetido o fuera de orden no pisa una lista más reciente.
+
+El expediente de investigación de un usuario (HU #81) se arma en `admin` con dos
+eventos de servers, sin preguntarle nada. `servers.report_updated` (de
+`reports/`) es una foto completa de un reporte de usuario o de mensaje: servers
+la publica al crearlo y en cada cambio de estado (`pending`, `resolved`,
+`dismissed`). No lleva `version`: el consumidor se queda con la foto de
+`occurred_at` más nuevo de cada reporte. Los campos que no aplican viajan como
+`null`, no se omiten (`reported_user_id` en un reporte de mensaje, `channel_id` y
+`message_id` en uno de usuario, `resolved_at` mientras está pendiente).
+`servers.moderation_action_recorded` (de `moderation/`) se publica por cada
+entrada nueva del registro de auditoría de moderación (`ban`, `unban`, `kick`,
+`mute`, `unmute`, los mismos textos que guarda servers). Es inmutable: `action_id`
+es el id de la entrada y la clave de idempotencia, y `occurred_at` es el momento
+de la acción. Ninguno de los dos lleva quién reportó, quién resolvió ni qué
+moderador actuó (minimización de datos): el expediente es sobre el usuario
+investigado.
 
 Los eventos de `permissions/` son la réplica de "quién puede qué" para quien
 no quiere preguntarle a servers en cada pedido (`messaging` autoriza cada
