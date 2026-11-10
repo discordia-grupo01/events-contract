@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.channel_overrides_updated.json",
+  "title": "servers.channel_overrides_updated",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "channel_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role_id": {
+            "type": "string"
+          },
+          "allow": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "deny": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "role_id",
+          "allow",
+          "deny"
+        ]
+      },
+      "description": "Un elemento por rol que tiene override en el canal. Vacío si no queda ninguno, nunca null."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "channel_id",
+    "overrides"
+  ]
+}

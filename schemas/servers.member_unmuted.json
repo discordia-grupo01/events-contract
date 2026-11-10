@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.member_unmuted.json",
+  "title": "servers.member_unmuted",
+  "description": "MemberUnmuted is published when a mute is manually revoked or expires.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "unmuted_by": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "expired"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "user_id",
+    "unmuted_by",
+    "reason"
+  ]
+}

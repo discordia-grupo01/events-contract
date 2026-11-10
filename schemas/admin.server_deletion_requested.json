@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/admin.server_deletion_requested.json",
+  "title": "admin.server_deletion_requested",
+  "description": "ServerDeletionRequested is published by admin when staff asks to delete a server. It is a request, not the fact: servers runs the same cascade it runs when the owner deletes the server and then publishes servers.server_deleted, which the other services already consume. It is irreversible, so servers must check the signature before touching anything. Same fields as ServerSuspended.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Servidor suspendido, reactivado o a eliminar (ID de discordia-servers)."
+    },
+    "version": {
+      "type": "integer",
+      "format": "int64",
+      "minimum": 1,
+      "description": "moderation_version del servidor en admin. Crece con cada suspensión, reactivación o eliminación; ordena los eventos del mismo servidor."
+    },
+    "signature": {
+      "type": "string",
+      "description": "HMAC-SHA256 en hexadecimal. Ver la sección \"Firma\" de la descripción del documento."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "version",
+    "signature"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "event": "presence_updated",
+  "event_id": "event-id",
+  "payload": {
+    "status": "status",
+    "user_id": "user-id",
+    "version": 1
+  },
+  "topic": "presence:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b"
+}

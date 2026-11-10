@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/messaging.message_deleted.json",
+  "title": "messaging.message_deleted",
+  "description": "MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Servidor del canal. No viaja si el mensaje era directo."
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "Canal del mensaje, o la conversación si era un mensaje directo."
+    },
+    "message_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "author_id": {
+      "type": "string",
+      "format": "uuid"
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "channel_id",
+    "message_id",
+    "author_id"
+  ]
+}

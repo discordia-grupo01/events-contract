@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.server_boost_updated.json",
+  "title": "servers.server_boost_updated",
+  "description": "ServerBoostUpdated is a full snapshot of a server's boosts, not a diff. A consumer applies it only if Version is higher than the one it has, so duplicated or out-of-order deliveries are harmless.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "boost_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 3,
+      "description": "0 hasta 4 boosts, 1 desde 5, 2 desde 15 y 3 desde 30."
+    },
+    "version": {
+      "type": "integer",
+      "format": "int64"
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "boost_count",
+    "level",
+    "version"
+  ]
+}

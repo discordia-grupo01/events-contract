@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/users.email_verified.json",
+  "title": "users.email_verified",
+  "description": "EmailVerified is published by identify once, when the user confirms the email of an account created with email sign-up (OAuth sign-ups never publish it: they are already verified in AccountRegistered). Like AccountRegistered it only exists for admin's back-office listing, which shows unverified accounts as pending. Verification is never undone, so there is no version: a repeated or out-of-order delivery is harmless, and it may arrive before AccountRegistered.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID del usuario en discordia-identify."
+    },
+    "verified_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento en que se confirmó el email, ISO 8601 en UTC."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "user_id",
+    "verified_at"
+  ]
+}

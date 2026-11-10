@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.disconnect.json",
+  "title": "broadcast.disconnect",
+  "description": "Disconnect makes every instance close the sockets of a user.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^user_socket:.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "disconnect"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}

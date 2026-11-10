@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.access_revoked.json",
+  "title": "broadcast.access_revoked",
+  "description": "AccessRevoked is sent when a user loses access to a server or a channel, so their open sockets leave it.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^(channel|presence):.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "access_revoked"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "server_id": {
+          "type": "string"
+        },
+        "channel_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "user_id",
+        "reason"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}

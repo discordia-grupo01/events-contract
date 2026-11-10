@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/users.account_registered.json",
+  "title": "users.account_registered",
+  "description": "AccountRegistered is published by identify once, when an account is created. It carries the data of the account itself (as opposed to the public profile of ProfileUpdated) for the one consumer that needs it: admin's back-office listing, which searches users by email. Email and CreatedAt never change, so there is no version: a repeated delivery is harmless because applying it again leaves the same values. Do not add this event to consumers that only need the public profile -- the email is private data. EmailVerified is true when the account was born verified (OAuth sign-up) and false for an email sign-up, which stays pending until EmailVerified arrives. Events published before this field existed don't carry it, so they decode as false.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID del usuario en discordia-identify."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Email de la cuenta. Dato privado; solo para el backoffice."
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre al momento del registro (los cambios posteriores viajan en `users.profile_updated`)."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de registro de la cuenta, ISO 8601 en UTC."
+    },
+    "email_verified": {
+      "type": "boolean",
+      "description": "Si el email ya estaba verificado al crear la cuenta: `true` en las altas por OAuth, `false` en el registro con email. Los eventos anteriores a la versión 0.5.0 no lo traen: el consumidor lo toma como `false`."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "user_id",
+    "email",
+    "name",
+    "created_at"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "event_id": "0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b",
+  "muted_by": "muted-by",
+  "occurred_at": "2026-11-10T15:00:00Z",
+  "reason": "reason",
+  "server_id": "0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b",
+  "until_at": "2026-11-10T15:00:00Z",
+  "user_id": "user-id"
+}

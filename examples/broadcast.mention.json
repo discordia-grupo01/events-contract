@@ -1,0 +1,32 @@
+{
+  "event": "mention",
+  "event_id": "event-id",
+  "payload": {
+    "channel_id": "channel-id",
+    "message": {
+      "attachments": [
+        {
+          "clave": "valor"
+        }
+      ],
+      "channel_id": "channel-id",
+      "client_id": "client-id",
+      "content": "content",
+      "edited": true,
+      "edited_at": "2026-11-10T15:00:00Z",
+      "id": "id",
+      "inserted_at": "2026-11-10T15:00:00Z",
+      "mention_everyone": true,
+      "mention_roles": [
+        "mention-roles"
+      ],
+      "mentions": [
+        "mentions"
+      ],
+      "server_id": "server-id",
+      "user_id": "user-id"
+    },
+    "server_id": "server-id"
+  },
+  "topic": "user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b"
+}

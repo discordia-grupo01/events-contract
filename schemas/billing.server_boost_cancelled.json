@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/billing.server_boost_cancelled.json",
+  "title": "billing.server_boost_cancelled",
+  "description": "SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "boost_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "boost_id",
+    "server_id",
+    "user_id",
+    "signature"
+  ]
+}

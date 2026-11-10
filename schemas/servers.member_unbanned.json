@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.member_unbanned.json",
+  "title": "servers.member_unbanned",
+  "description": "MemberUnbanned is published when a ban is revoked. It does not make the user a member again: they still need a valid invitation to rejoin.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Usuario cuyo ban se revocó."
+    },
+    "unbanned_by": {
+      "type": "string",
+      "description": "Usuario con BAN_MEMBERS que revocó el ban."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "user_id",
+    "unbanned_by"
+  ]
+}
