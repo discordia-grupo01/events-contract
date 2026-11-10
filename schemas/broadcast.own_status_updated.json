@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.own_status_updated.json",
+  "title": "broadcast.own_status_updated",
+  "description": "OwnStatusUpdated is sent to a user's own sockets when they change the status they chose.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^user:.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "own_status_updated"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "status",
+        "version"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.moderation_action_recorded.json",
+  "title": "servers.moderation_action_recorded",
+  "description": "ModerationActionRecorded is published by servers every time a moderation action (ban, unban, kick, mute or unmute) is written to its audit log. Admin consumes it to build the investigation dossier of a user without asking servers. Meta.OccurredAt is the moment of the action, the same occurred_at as the audit log entry. An audit entry never changes, so the event is immutable: ActionID is the id of the audit entry and the idempotency key, and a repeated delivery with the same ActionID must be ignored. It carries neither the moderator who acted nor the reason (data minimization): the dossier is about the target user, and who acted is only needed inside servers.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "action_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Id de la fila de `moderation_audit_entries` en servers. Sirve para deduplicar."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "ban",
+        "unban",
+        "kick",
+        "mute",
+        "unmute"
+      ]
+    },
+    "target_user_id": {
+      "type": "string",
+      "description": "Usuario sobre el que se aplicó la acción (ID de discordia-identify)."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "action_id",
+    "server_id",
+    "action",
+    "target_user_id"
+  ]
+}

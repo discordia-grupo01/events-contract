@@ -1,3 +1,5 @@
 .DS_Store
 _build/
 deps/
+scripts/node_modules/
+scripts/package-lock.json

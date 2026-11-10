@@ -34,13 +34,13 @@ const (
 
 type StaffMemberAdded struct {
 	envelope.Meta
-	UserID    string `json:"user_id"`
+	UserID    string `json:"user_id" contract:"format=uuid"`
 	Signature string `json:"signature"`
 }
 
 type StaffMemberRemoved struct {
 	envelope.Meta
-	UserID    string `json:"user_id"`
+	UserID    string `json:"user_id" contract:"format=uuid"`
 	Signature string `json:"signature"`
 }
 
@@ -71,8 +71,11 @@ func (e StaffMemberRemoved) Verify(secret string) bool {
 // (data minimisation).
 type UserSuspended struct {
 	envelope.Meta
-	UserID    string `json:"user_id"`
-	Version   int64  `json:"version"`
+	// Usuario suspendido o reactivado (ID de discordia-identify).
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// suspension_version del usuario en admin. Crece con cada suspensión o reactivación; ordena los eventos del mismo usuario.
+	Version int64 `json:"version" contract:"format=int64;minimum=1"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
 	Signature string `json:"signature"`
 }
 
@@ -80,8 +83,11 @@ type UserSuspended struct {
 // fields and rules as UserSuspended.
 type UserReactivated struct {
 	envelope.Meta
-	UserID    string `json:"user_id"`
-	Version   int64  `json:"version"`
+	// Usuario suspendido o reactivado (ID de discordia-identify).
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// suspension_version del usuario en admin. Crece con cada suspensión o reactivación; ordena los eventos del mismo usuario.
+	Version int64 `json:"version" contract:"format=int64;minimum=1"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
 	Signature string `json:"signature"`
 }
 
@@ -119,8 +125,11 @@ func (e UserReactivated) Verify(secret string) bool {
 // never travels (data minimisation).
 type ServerSuspended struct {
 	envelope.Meta
-	ServerID  string `json:"server_id"`
-	Version   int64  `json:"version"`
+	// Servidor suspendido, reactivado o a eliminar (ID de discordia-servers).
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// moderation_version del servidor en admin. Crece con cada suspensión, reactivación o eliminación; ordena los eventos del mismo servidor.
+	Version int64 `json:"version" contract:"format=int64;minimum=1"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
 	Signature string `json:"signature"`
 }
 
@@ -128,8 +137,11 @@ type ServerSuspended struct {
 // suspension. Same fields and rules as ServerSuspended.
 type ServerReactivated struct {
 	envelope.Meta
-	ServerID  string `json:"server_id"`
-	Version   int64  `json:"version"`
+	// Servidor suspendido, reactivado o a eliminar (ID de discordia-servers).
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// moderation_version del servidor en admin. Crece con cada suspensión, reactivación o eliminación; ordena los eventos del mismo servidor.
+	Version int64 `json:"version" contract:"format=int64;minimum=1"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
 	Signature string `json:"signature"`
 }
 
@@ -140,8 +152,11 @@ type ServerReactivated struct {
 // check the signature before touching anything. Same fields as ServerSuspended.
 type ServerDeletionRequested struct {
 	envelope.Meta
-	ServerID  string `json:"server_id"`
-	Version   int64  `json:"version"`
+	// Servidor suspendido, reactivado o a eliminar (ID de discordia-servers).
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// moderation_version del servidor en admin. Crece con cada suspensión, reactivación o eliminación; ordena los eventos del mismo servidor.
+	Version int64 `json:"version" contract:"format=int64;minimum=1"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
 	Signature string `json:"signature"`
 }
 

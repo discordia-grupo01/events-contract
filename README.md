@@ -4,10 +4,45 @@ Structs/tipos compartidos para los eventos que viajan por `discordia.events`
 (RabbitMQ) -- para que ningún servicio mantenga su propia copia del mismo
 evento.
 
-La fuente de verdad del *schema* sigue siendo el AsyncAPI en
-[`docs`](https://github.com/discordia-grupo01/docs); acá viven las
-implementaciones de ese schema. Un cambio de schema se hace primero en el
-AsyncAPI y después se replica acá.
+La fuente de verdad del *schema* son las structs de Go de este repo. De ellas se
+generan solas, con `go run ./cmd/eventsgen gen`, los JSON Schema, los ejemplos y
+un AsyncAPI completo; el CI falla si lo generado no coincide con el código. El
+AsyncAPI de [`docs`](https://github.com/discordia-grupo01/docs) conserva la
+explicación en prosa y se compara contra este contrato (`eventsgen docs-check`).
+
+## Generación y validación automáticas
+
+```
+structs de Go  ──go run ./cmd/eventsgen gen──▶  schemas/<routing key>.json   (JSON Schema, draft-07)
+                                                 examples/<routing key>.json  (un ejemplo válido por evento)
+                                                 asyncapi/events.asyncapi.yaml (AsyncAPI 3.0 completo)
+```
+
+- **Agregar un evento:** escribir la struct, la constante `RoutingKey...` y la línea
+  en `catalog/catalog.go` (productor y consumidores); correr `gen` y commitear lo que
+  genera. Un test falla si una constante `RoutingKey...` no está en el catálogo.
+- **Detalles del schema** (formato, largo, valores permitidos, campo opcional) se
+  escriben en la etiqueta `contract` de la struct, separados por `;`:
+  `contract:"format=uuid"`, `contract:"maxLength=160"`, `contract:"enum=a|b"`,
+  `contract:"optional=true"`. Los comentarios de Go pasan a ser las descripciones.
+  `Omit` y `Require` del catálogo ajustan un schema cuando una misma struct sirve a
+  varios eventos (por ejemplo, `reason` solo es obligatorio en `servers.server_boost_rejected`).
+- **Validar en Go:** `validate.Validate(routingKey, cuerpoJSON)` (schemas embebidos).
+  Un campo de más no rompe a nadie: agregar campos es seguro.
+- **Validar en Elixir:** `Discordia.EventsContract.Validator.validate(routing_key, mapa_o_json)`
+  (dependencia de git de `events_contract`; usa `ex_json_schema`). Los ejemplos de
+  `examples/` se validan con los dos validadores en el CI, para que Go y Elixir
+  coincidan.
+- **Versionado:** en cada PR, `eventsgen compat origin/<rama base>` compara los schemas
+  con los de la rama base y falla si se quitó un evento o un campo, cambió un tipo,
+  un campo pasó a ser obligatorio, se restringió un valor, o se agregó un campo
+  obligatorio nuevo (los publicadores viejos no lo mandan). Quitar un campo se hace en dos
+  pasos: primero se deja de usar en los consumidores, después se quita. Si el cambio es
+  intencional, se agrega el routing key a `compat.allow` y se explica en el PR.
+- **Canal interno de `messaging`:** los 13 eventos que viajan entre sus instancias por el
+  exchange `messaging.broadcast` (`fanout`) están en `broadcast/` y en el catálogo como
+  `broadcast.<evento>`. Solo los consume `messaging`; no son parte del bus entre servicios.
+- **Comparar con el AsyncAPI de `docs`:** `go run ./cmd/eventsgen docs-check ../docs/asyncapi`.
 
 ## Estructura
 

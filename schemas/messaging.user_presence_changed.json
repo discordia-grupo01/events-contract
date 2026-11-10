@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/messaging.user_presence_changed.json",
+  "title": "messaging.user_presence_changed",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "connections": {
+      "type": "string",
+      "enum": [
+        "active",
+        "idle",
+        "none"
+      ],
+      "description": "Estado real de las conexiones del usuario, de todas sus instancias y dispositivos."
+    },
+    "do_not_disturb": {
+      "type": "boolean",
+      "description": "`true` si el usuario eligió No molestar. Se manda siempre."
+    },
+    "version": {
+      "type": "integer",
+      "format": "int64",
+      "description": "Crece con cada cambio del mismo usuario. El consumidor aplica el evento solo si es mayor a la que ya tiene."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "user_id",
+    "connections",
+    "do_not_disturb",
+    "version"
+  ]
+}

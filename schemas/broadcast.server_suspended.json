@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.server_suspended.json",
+  "title": "broadcast.server_suspended",
+  "description": "ServerSuspended is sent to every member when staff suspends the server.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^user:.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "server_suspended"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "server_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "server_id"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}

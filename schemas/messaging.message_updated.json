@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/messaging.message_updated.json",
+  "title": "messaging.message_updated",
+  "description": "MessageUpdated is published when the text of a message in a server channel is edited. It carries the mentions the message has after the edit, so a consumer can add the notification of whoever the edit mentioned and remove the one of whoever it stopped mentioning. OccurredAt is the moment of the edit. Direct messages never publish it: they have no mentions.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "channel_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "message_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "author_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "mentioned_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      },
+      "description": "Menciones que el mensaje tiene después de la edición, ya validadas y sin el autor. Puede ser una lista vacía."
+    },
+    "channel_name": {
+      "type": "string",
+      "description": "Nombre del canal. Opcional; solo para armar el aviso push."
+    },
+    "content_preview": {
+      "type": "string",
+      "maxLength": 160,
+      "description": "Extracto del texto editado (unos 140 caracteres), opcional. Solo para armar el aviso push; el consumidor no debe guardarlo."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "channel_id",
+    "message_id",
+    "author_id",
+    "mentioned_user_ids"
+  ]
+}

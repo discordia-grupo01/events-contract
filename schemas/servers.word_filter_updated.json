@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.word_filter_updated.json",
+  "title": "servers.word_filter_updated",
+  "description": "WordFilterUpdated is published every time a server's banned words list changes. It carries the whole list, not a diff, so consumers keep the one with the newest occurred_at and a repeated or late event never undoes a newer change. Words must never be nil: an empty list (no filter) has to marshal as [] and not as null.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "words": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Palabras o frases prohibidas, normalizadas (minúsculas, sin espacios de más). Lista vacía = sin filtro."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "words"
+  ]
+}

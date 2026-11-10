@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/billing.premium_updated.json",
+  "title": "billing.premium_updated",
+  "description": "PremiumUpdated is a full snapshot of a user's Premium, not a diff. billing publishes it when Premium starts, renews, stops renewing, is revoked (refund or chargeback) or expires. Active is what consumers apply. PremiumUntil (nil if the user never paid) and Renews are for display: when PremiumUntil passes, billing publishes another snapshot with Active false, so consumers never need a clock. Version grows with every snapshot of the same user; a consumer applies an event only if its version is higher than the one it already has, so duplicated or out-of-order deliveries are harmless.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Usuario (ID de discordia-identify)."
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Si el usuario tiene Premium ahora. Es lo único que el consumidor necesita aplicar."
+    },
+    "premium_until": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "Hasta cuándo está pago, en UTC. `null` si nunca pagó."
+    },
+    "renews": {
+      "type": "boolean",
+      "description": "Si Mercado Pago va a volver a cobrar al llegar `premium_until`."
+    },
+    "version": {
+      "type": "integer",
+      "format": "int64",
+      "minimum": 1,
+      "description": "Crece con cada foto del mismo usuario; ordena los eventos."
+    },
+    "signature": {
+      "type": "string",
+      "description": "HMAC-SHA256 en hexadecimal. Ver la sección \"Firma\" de la descripción del documento."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "user_id",
+    "active",
+    "premium_until",
+    "renews",
+    "version",
+    "signature"
+  ]
+}

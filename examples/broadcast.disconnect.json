@@ -1,0 +1,6 @@
+{
+  "event": "disconnect",
+  "event_id": "event-id",
+  "payload": {},
+  "topic": "user_socket:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b"
+}

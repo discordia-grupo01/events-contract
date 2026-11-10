@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/voice.participant_left.json",
+  "title": "voice.participant_left",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "voice.participant_joined",
+        "voice.participant_left"
+      ]
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "room_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "participant_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "event_type",
+    "server_id",
+    "room_id",
+    "participant_id",
+    "name"
+  ]
+}

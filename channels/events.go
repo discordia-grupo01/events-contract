@@ -12,17 +12,17 @@ const (
 // inside a server.
 type ChannelCreated struct {
 	envelope.Meta
-	ServerID  string `json:"server_id"`
-	ChannelID string `json:"channel_id"`
+	ServerID  string `json:"server_id" contract:"format=uuid"`
+	ChannelID string `json:"channel_id" contract:"format=uuid"`
 	Name      string `json:"name"`
-	Kind      string `json:"kind"`
+	Kind      string `json:"kind" contract:"enum=text|voice"`
 }
 
 // ChannelDeleted is published when a channel is removed from a server.
 type ChannelDeleted struct {
 	envelope.Meta
-	ServerID  string `json:"server_id"`
-	ChannelID string `json:"channel_id"`
+	ServerID  string `json:"server_id" contract:"format=uuid"`
+	ChannelID string `json:"channel_id" contract:"format=uuid"`
 }
 
 // ChannelAccessRevoked is published when members who could see a channel
@@ -35,7 +35,8 @@ type ChannelDeleted struct {
 // never published.
 type ChannelAccessRevoked struct {
 	envelope.Meta
-	ServerID  string   `json:"server_id"`
-	ChannelID string   `json:"channel_id"`
-	UserIDs   []string `json:"user_ids"`
+	ServerID  string `json:"server_id" contract:"format=uuid"`
+	ChannelID string `json:"channel_id" contract:"format=uuid"`
+	// Usuarios que perdieron el acceso a ese canal. Nunca vacío, sin repetidos.
+	UserIDs []string `json:"user_ids" contract:"minItems=1"`
 }

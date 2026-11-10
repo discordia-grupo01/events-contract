@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/messaging.direct_message_created.json",
+  "title": "messaging.direct_message_created",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "Id de la conversación (determinístico a partir de los dos participantes)."
+    },
+    "message_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID v7 del mensaje, ordenable por tiempo de creación."
+    },
+    "author_id": {
+      "type": "string",
+      "description": "Quien escribió el mensaje."
+    },
+    "recipient_id": {
+      "type": "string",
+      "description": "El otro participante de la conversación."
+    },
+    "content_preview": {
+      "type": "string",
+      "maxLength": 160,
+      "description": "Extracto del texto (unos 140 caracteres), opcional. Solo para armar el aviso push; el consumidor no debe guardarlo."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "conversation_id",
+    "message_id",
+    "author_id",
+    "recipient_id"
+  ]
+}

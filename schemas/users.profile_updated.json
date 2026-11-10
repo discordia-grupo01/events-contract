@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/users.profile_updated.json",
+  "title": "users.profile_updated",
+  "description": "ProfileUpdated is published by identify when a user is created and every time their public profile or status changes. It is a full snapshot, not a diff, so consumers don't need the previous state. Version is identify's profile_version: it grows with every change of the same user, and a consumer applies a snapshot only if its version is higher than the one it already has (duplicates and out-of-order deliveries are then harmless). Only public fields travel: the email never does.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID del usuario en discordia-identify."
+    },
+    "version": {
+      "type": "integer",
+      "format": "int64",
+      "minimum": 1,
+      "description": "profile_version del usuario en identify. Crece con cada cambio; ordena las fotos del mismo usuario."
+    },
+    "name": {
+      "type": "string"
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "URL pública del avatar, o vacío si no tiene."
+    },
+    "description": {
+      "type": "string",
+      "description": "Vacío si no tiene."
+    },
+    "status_text": {
+      "type": "string",
+      "description": "Texto del estado personalizado, o vacío si no tiene."
+    },
+    "status_emoji": {
+      "type": "string",
+      "description": "Emoji del estado personalizado, o vacío si no tiene."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "user_id",
+    "version",
+    "name",
+    "avatar_url",
+    "description",
+    "status_text",
+    "status_emoji"
+  ]
+}

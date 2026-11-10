@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.reaction_updated.json",
+  "title": "broadcast.reaction_updated",
+  "description": "ReactionUpdated is sent when somebody adds or removes a reaction.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^channel:.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "reaction_updated"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "channel_id": {
+          "type": "string"
+        },
+        "message_id": {
+          "type": "string"
+        },
+        "emoji": {
+          "type": "string"
+        },
+        "user_id": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "channel_id",
+        "message_id",
+        "emoji",
+        "user_id",
+        "action",
+        "count"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}

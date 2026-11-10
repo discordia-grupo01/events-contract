@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.server_updated.json",
+  "title": "servers.server_updated",
+  "description": "ServerUpdated is published by servers when a server is created and every time its name or owner changes. It is a full snapshot, not a diff, so consumers don't need the previous state. There is no version: the consumer keeps the snapshot with the newest occurred_at of each server, so a repeated or out-of-order delivery doesn't overwrite newer data (same rule as the permissions events). Built for admin's back-office listing, which shows the name, owner and creation date of every server without asking servers.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string"
+    },
+    "owner_id": {
+      "type": "string",
+      "description": "ID del dueño del servidor (emitido por discordia-identify)."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de creación del servidor, ISO 8601 en UTC. No cambia entre fotos."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "name",
+    "owner_id",
+    "created_at"
+  ]
+}

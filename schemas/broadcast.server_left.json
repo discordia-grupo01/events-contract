@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.server_left.json",
+  "title": "broadcast.server_left",
+  "description": "ServerLeft is sent to a user who stopped being a member, so the client drops the server from its list.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^user:.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "server_left"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "server_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "server_id"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}
