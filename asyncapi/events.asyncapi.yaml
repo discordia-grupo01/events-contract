@@ -1,0 +1,4462 @@
+asyncapi: 3.0.0
+info:
+  title: Discordia — Contrato de eventos (generado)
+  version: generated
+  description: 'Documento generado por `go run ./cmd/eventsgen gen` a partir de las structs de Go de `events-contract`. No se edita a mano: el CI falla si no coincide con el código. Cada payload se valida con los JSON Schema de la carpeta `schemas/`.'
+servers:
+  rabbitmq:
+    host: '{host}'
+    protocol: amqp
+    description: Broker RabbitMQ.
+    variables:
+      host:
+        default: localhost:5672
+defaultContentType: application/json
+channels:
+  adminServerDeletionRequested:
+    address: admin.server_deletion_requested
+    title: admin.server_deletion_requested
+    description: 'ServerDeletionRequested is published by admin when staff asks to delete a server. It is a request, not the fact: servers runs the same cascade it runs when the owner deletes the server and then publishes servers.server_deleted, which the other services already consume. It is irreversible, so servers must check the signature before touching anything. Same fields as ServerSuspended.'
+    messages:
+      serverDeletionRequested:
+        $ref: '#/components/messages/ServerDeletionRequested'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  adminServerReactivated:
+    address: admin.server_reactivated
+    title: admin.server_reactivated
+    description: ServerReactivated is sent to every member when staff lifts the suspension.
+    messages:
+      serverReactivated:
+        $ref: '#/components/messages/ServerReactivated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  adminServerSuspended:
+    address: admin.server_suspended
+    title: admin.server_suspended
+    description: ServerSuspended is sent to every member when staff suspends the server.
+    messages:
+      serverSuspended:
+        $ref: '#/components/messages/ServerSuspended'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  adminStaffMemberAdded:
+    address: admin.staff_member_added
+    title: admin.staff_member_added
+    messages:
+      staffMemberAdded:
+        $ref: '#/components/messages/StaffMemberAdded'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  adminStaffMemberRemoved:
+    address: admin.staff_member_removed
+    title: admin.staff_member_removed
+    messages:
+      staffMemberRemoved:
+        $ref: '#/components/messages/StaffMemberRemoved'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  adminUserReactivated:
+    address: admin.user_reactivated
+    title: admin.user_reactivated
+    description: UserReactivated is published by admin when staff lifts a suspension. Same fields and rules as UserSuspended.
+    messages:
+      userReactivated:
+        $ref: '#/components/messages/UserReactivated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  adminUserSuspended:
+    address: admin.user_suspended
+    title: admin.user_suspended
+    description: 'UserSuspended is published by admin when staff suspends an account. Every service that serves users (identify, servers, messaging, voice) reacts by rejecting anything that user does and cutting their open sessions. Version is admin''s suspension_version for that user: it grows with every suspension or reactivation, and a consumer applies an event only if its version is higher than the one it already has, so duplicated or out-of-order deliveries are harmless. The reason for the suspension never travels (data minimisation).'
+    messages:
+      userSuspended:
+        $ref: '#/components/messages/UserSuspended'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  billingPremiumUpdated:
+    address: billing.premium_updated
+    title: billing.premium_updated
+    description: 'PremiumUpdated is a full snapshot of a user''s Premium, not a diff. billing publishes it when Premium starts, renews, stops renewing, is revoked (refund or chargeback) or expires. Active is what consumers apply. PremiumUntil (nil if the user never paid) and Renews are for display: when PremiumUntil passes, billing publishes another snapshot with Active false, so consumers never need a clock. Version grows with every snapshot of the same user; a consumer applies an event only if its version is higher than the one it already has, so duplicated or out-of-order deliveries are harmless.'
+    messages:
+      premiumUpdated:
+        $ref: '#/components/messages/PremiumUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  billingServerBoostRequested:
+    address: billing.server_boost_requested
+    title: billing.server_boost_requested
+    description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+    messages:
+      serverBoostRequested:
+        $ref: '#/components/messages/ServerBoostRequested'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  billingServerBoostCancelled:
+    address: billing.server_boost_cancelled
+    title: billing.server_boost_cancelled
+    description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+    messages:
+      serverBoostCancelled:
+        $ref: '#/components/messages/ServerBoostCancelled'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  billingServerBoostRemoved:
+    address: billing.server_boost_removed
+    title: billing.server_boost_removed
+    description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+    messages:
+      serverBoostRemoved:
+        $ref: '#/components/messages/ServerBoostRemoved'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversServerBoostApplied:
+    address: servers.server_boost_applied
+    title: servers.server_boost_applied
+    description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+    messages:
+      serverBoostApplied:
+        $ref: '#/components/messages/ServerBoostApplied'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversServerBoostRejected:
+    address: servers.server_boost_rejected
+    title: servers.server_boost_rejected
+    description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+    messages:
+      serverBoostRejected:
+        $ref: '#/components/messages/ServerBoostRejected'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversServerBoostUpdated:
+    address: servers.server_boost_updated
+    title: servers.server_boost_updated
+    description: ServerBoostUpdated is a full snapshot of a server's boosts, not a diff. A consumer applies it only if Version is higher than the one it has, so duplicated or out-of-order deliveries are harmless.
+    messages:
+      serverBoostUpdated:
+        $ref: '#/components/messages/ServerBoostUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversChannelAccessRevoked:
+    address: servers.channel_access_revoked
+    title: servers.channel_access_revoked
+    description: 'ChannelAccessRevoked is published when members who could see a channel (VIEW_CHANNELS after its per-role overrides) no longer can: an override or a role''s permissions changed, a role was assigned, removed or deleted, the ownership was transferred, or the member was kicked, banned or left. There is one event per affected channel, text or voice; UserIDs holds only the members who lost access, never empty. Consumers cut what those users have open in the channel (a messaging socket, a voice room); gaining access is never published.'
+    messages:
+      channelAccessRevoked:
+        $ref: '#/components/messages/ChannelAccessRevoked'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversChannelCreated:
+    address: servers.channel_created
+    title: servers.channel_created
+    description: ChannelCreated is published when a text or voice channel is created inside a server.
+    messages:
+      channelCreated:
+        $ref: '#/components/messages/ChannelCreated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversChannelDeleted:
+    address: servers.channel_deleted
+    title: servers.channel_deleted
+    description: ChannelDeleted is published when a channel is removed from a server.
+    messages:
+      channelDeleted:
+        $ref: '#/components/messages/ChannelDeleted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberJoined:
+    address: servers.member_joined
+    title: servers.member_joined
+    description: MemberJoined is published when a user joins a server.
+    messages:
+      memberJoined:
+        $ref: '#/components/messages/MemberJoined'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberLeft:
+    address: servers.member_left
+    title: servers.member_left
+    description: MemberLeft is published when a user leaves (or is removed from) a server.
+    messages:
+      memberLeft:
+        $ref: '#/components/messages/MemberLeft'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  messagingDirectMessageCreated:
+    address: messaging.direct_message_created
+    title: messaging.direct_message_created
+    messages:
+      directMessageCreated:
+        $ref: '#/components/messages/DirectMessageCreated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  messagingMessageCreated:
+    address: messaging.message_created
+    title: messaging.message_created
+    messages:
+      messageCreated:
+        $ref: '#/components/messages/MessageCreated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  messagingMessageDeleted:
+    address: messaging.message_deleted
+    title: messaging.message_deleted
+    description: MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.
+    messages:
+      messageDeleted:
+        $ref: '#/components/messages/MessageDeleted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  messagingMessageUpdated:
+    address: messaging.message_updated
+    title: messaging.message_updated
+    description: 'MessageUpdated is published when the text of a message in a server channel is edited. It carries the mentions the message has after the edit, so a consumer can add the notification of whoever the edit mentioned and remove the one of whoever it stopped mentioning. OccurredAt is the moment of the edit. Direct messages never publish it: they have no mentions.'
+    messages:
+      messageUpdated:
+        $ref: '#/components/messages/MessageUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberBanned:
+    address: servers.member_banned
+    title: servers.member_banned
+    description: MemberBanned is published when a member is banned from a server. The same transaction also publishes membership.MemberLeft, so consumers that only track membership don't need to know about bans.
+    messages:
+      memberBanned:
+        $ref: '#/components/messages/MemberBanned'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberKicked:
+    address: servers.member_kicked
+    title: servers.member_kicked
+    description: MemberKicked is published when a member is kicked from a server. Unlike a ban, nothing stops them from rejoining with a valid invitation. The same transaction also publishes membership.MemberLeft, so consumers that only track membership don't need to know about kicks.
+    messages:
+      memberKicked:
+        $ref: '#/components/messages/MemberKicked'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberMuted:
+    address: servers.member_muted
+    title: servers.member_muted
+    description: MemberMuted is published when a member loses the ability to send messages and publish voice for a limited period. The session remains connected.
+    messages:
+      memberMuted:
+        $ref: '#/components/messages/MemberMuted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberUnbanned:
+    address: servers.member_unbanned
+    title: servers.member_unbanned
+    description: 'MemberUnbanned is published when a ban is revoked. It does not make the user a member again: they still need a valid invitation to rejoin.'
+    messages:
+      memberUnbanned:
+        $ref: '#/components/messages/MemberUnbanned'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberUnmuted:
+    address: servers.member_unmuted
+    title: servers.member_unmuted
+    description: MemberUnmuted is published when a mute is manually revoked or expires.
+    messages:
+      memberUnmuted:
+        $ref: '#/components/messages/MemberUnmuted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversModerationActionRecorded:
+    address: servers.moderation_action_recorded
+    title: servers.moderation_action_recorded
+    description: 'ModerationActionRecorded is published by servers every time a moderation action (ban, unban, kick, mute or unmute) is written to its audit log. Admin consumes it to build the investigation dossier of a user without asking servers. Meta.OccurredAt is the moment of the action, the same occurred_at as the audit log entry. An audit entry never changes, so the event is immutable: ActionID is the id of the audit entry and the idempotency key, and a repeated delivery with the same ActionID must be ignored. It carries neither the moderator who acted nor the reason (data minimization): the dossier is about the target user, and who acted is only needed inside servers.'
+    messages:
+      moderationActionRecorded:
+        $ref: '#/components/messages/ModerationActionRecorded'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversWordFilterUpdated:
+    address: servers.word_filter_updated
+    title: servers.word_filter_updated
+    description: 'WordFilterUpdated is published every time a server''s banned words list changes. It carries the whole list, not a diff, so consumers keep the one with the newest occurred_at and a repeated or late event never undoes a newer change. Words must never be nil: an empty list (no filter) has to marshal as [] and not as null.'
+    messages:
+      wordFilterUpdated:
+        $ref: '#/components/messages/WordFilterUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversChannelOverridesUpdated:
+    address: servers.channel_overrides_updated
+    title: servers.channel_overrides_updated
+    messages:
+      channelOverridesUpdated:
+        $ref: '#/components/messages/ChannelOverridesUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversMemberRolesUpdated:
+    address: servers.member_roles_updated
+    title: servers.member_roles_updated
+    messages:
+      memberRolesUpdated:
+        $ref: '#/components/messages/MemberRolesUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversOwnerUpdated:
+    address: servers.owner_updated
+    title: servers.owner_updated
+    messages:
+      ownerUpdated:
+        $ref: '#/components/messages/OwnerUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversRoleDeleted:
+    address: servers.role_deleted
+    title: servers.role_deleted
+    messages:
+      roleDeleted:
+        $ref: '#/components/messages/RoleDeleted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversRoleUpdated:
+    address: servers.role_updated
+    title: servers.role_updated
+    messages:
+      roleUpdated:
+        $ref: '#/components/messages/RoleUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  platformHealthChanged:
+    address: platform.health_changed
+    title: platform.health_changed
+    messages:
+      healthChanged:
+        $ref: '#/components/messages/HealthChanged'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  platformStatusChanged:
+    address: platform.status_changed
+    title: platform.status_changed
+    messages:
+      statusChanged:
+        $ref: '#/components/messages/StatusChanged'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  messagingUserPresenceChanged:
+    address: messaging.user_presence_changed
+    title: messaging.user_presence_changed
+    messages:
+      userPresenceChanged:
+        $ref: '#/components/messages/UserPresenceChanged'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversReportUpdated:
+    address: servers.report_updated
+    title: servers.report_updated
+    description: 'ReportUpdated is published by servers when a user or message report is created and every time its status changes. Admin consumes it to build the investigation dossier of a user without asking servers. It is a full snapshot of the report, not a diff. There is no version: the consumer keeps the snapshot with the newest occurred_at of each report, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as servers.ServerUpdated). Optional fields are always present and marshal as null when empty (no omitempty): ReportedUserID is null when Kind is KindMessage, ChannelID and MessageID are null when Kind is KindUser, and ResolvedAt is null while the report is pending. It carries neither the reporter nor the moderator who resolved it (data minimization): the dossier is about the reported user, and who reported or resolved is only needed inside servers.'
+    messages:
+      reportUpdated:
+        $ref: '#/components/messages/ReportUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversEmojiCreated:
+    address: servers.emoji_created
+    title: servers.emoji_created
+    description: 'EmojiCreated is published by servers when a custom emoji is added to a server. Like EmojiDeleted, it carries the whole emoji: an emoji never changes after it is created, so its only transition is being deleted, and that transition wins whatever order the two events arrive in.'
+    messages:
+      emojiCreated:
+        $ref: '#/components/messages/EmojiCreated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversEmojiDeleted:
+    address: servers.emoji_deleted
+    title: servers.emoji_deleted
+    description: 'EmojiDeleted is published by servers when a custom emoji is deleted. It can no longer be used in new messages or reactions, but the image stays available: consumers keep it so the messages and reactions that already use it still show it.'
+    messages:
+      emojiDeleted:
+        $ref: '#/components/messages/EmojiDeleted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversServerDeleted:
+    address: servers.server_deleted
+    title: servers.server_deleted
+    messages:
+      serverDeleted:
+        $ref: '#/components/messages/ServerDeleted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversServerUpdated:
+    address: servers.server_updated
+    title: servers.server_updated
+    description: 'ServerUpdated is published by servers when a server is created and every time its name or owner changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. There is no version: the consumer keeps the snapshot with the newest occurred_at of each server, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as the permissions events). Built for admin''s back-office listing, which shows the name, owner and creation date of every server without asking servers.'
+    messages:
+      serverUpdated:
+        $ref: '#/components/messages/ServerUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  usersAccountRegistered:
+    address: users.account_registered
+    title: users.account_registered
+    description: 'AccountRegistered is published by identify once, when an account is created. It carries the data of the account itself (as opposed to the public profile of ProfileUpdated) for the one consumer that needs it: admin''s back-office listing, which searches users by email. Email and CreatedAt never change, so there is no version: a repeated delivery is harmless because applying it again leaves the same values. Do not add this event to consumers that only need the public profile -- the email is private data. EmailVerified is true when the account was born verified (OAuth sign-up) and false for an email sign-up, which stays pending until EmailVerified arrives. Events published before this field existed don''t carry it, so they decode as false.'
+    messages:
+      accountRegistered:
+        $ref: '#/components/messages/AccountRegistered'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  usersEmailVerified:
+    address: users.email_verified
+    title: users.email_verified
+    description: 'EmailVerified is published by identify once, when the user confirms the email of an account created with email sign-up (OAuth sign-ups never publish it: they are already verified in AccountRegistered). Like AccountRegistered it only exists for admin''s back-office listing, which shows unverified accounts as pending. Verification is never undone, so there is no version: a repeated or out-of-order delivery is harmless, and it may arrive before AccountRegistered.'
+    messages:
+      emailVerified:
+        $ref: '#/components/messages/EmailVerified'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  usersProfileUpdated:
+    address: users.profile_updated
+    title: users.profile_updated
+    description: 'ProfileUpdated is published by identify when a user is created and every time their public profile or status changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. Version is identify''s profile_version: it grows with every change of the same user, and a consumer applies a snapshot only if its version is higher than the one it already has (duplicates and out-of-order deliveries are then harmless). Only public fields travel: the email never does.'
+    messages:
+      profileUpdated:
+        $ref: '#/components/messages/ProfileUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  voiceParticipantJoined:
+    address: voice.participant_joined
+    title: voice.participant_joined
+    messages:
+      participantJoined:
+        $ref: '#/components/messages/ParticipantJoined'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  voiceParticipantLeft:
+    address: voice.participant_left
+    title: voice.participant_left
+    messages:
+      participantLeft:
+        $ref: '#/components/messages/ParticipantLeft'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  voicePrivateCall:
+    address: voice.private_call
+    title: voice.private_call
+    messages:
+      privateCall:
+        $ref: '#/components/messages/PrivateCall'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  broadcastNewMessage:
+    address: broadcast.new_message
+    title: broadcast.new_message
+    description: NewMessage is sent to every instance of messaging when a message is created, so each one pushes it to the sockets it holds.
+    messages:
+      broadcastNewMessage:
+        $ref: '#/components/messages/BroadcastNewMessage'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastMessageUpdated:
+    address: broadcast.message_updated
+    title: broadcast.message_updated
+    description: 'MessageUpdated is published when the text of a message in a server channel is edited. It carries the mentions the message has after the edit, so a consumer can add the notification of whoever the edit mentioned and remove the one of whoever it stopped mentioning. OccurredAt is the moment of the edit. Direct messages never publish it: they have no mentions.'
+    messages:
+      broadcastMessageUpdated:
+        $ref: '#/components/messages/BroadcastMessageUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastMessageDeleted:
+    address: broadcast.message_deleted
+    title: broadcast.message_deleted
+    description: MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.
+    messages:
+      broadcastMessageDeleted:
+        $ref: '#/components/messages/BroadcastMessageDeleted'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastReactionUpdated:
+    address: broadcast.reaction_updated
+    title: broadcast.reaction_updated
+    description: ReactionUpdated is sent when somebody adds or removes a reaction.
+    messages:
+      broadcastReactionUpdated:
+        $ref: '#/components/messages/BroadcastReactionUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastNewDm:
+    address: broadcast.new_dm
+    title: broadcast.new_dm
+    description: NewDM is sent to each participant of a direct conversation when a message arrives.
+    messages:
+      broadcastNewDm:
+        $ref: '#/components/messages/BroadcastNewDm'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastMention:
+    address: broadcast.mention
+    title: broadcast.mention
+    description: Mention is sent to every user a message mentions, wherever they are.
+    messages:
+      broadcastMention:
+        $ref: '#/components/messages/BroadcastMention'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastAccessRevoked:
+    address: broadcast.access_revoked
+    title: broadcast.access_revoked
+    description: AccessRevoked is sent when a user loses access to a server or a channel, so their open sockets leave it.
+    messages:
+      broadcastAccessRevoked:
+        $ref: '#/components/messages/BroadcastAccessRevoked'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastServerLeft:
+    address: broadcast.server_left
+    title: broadcast.server_left
+    description: ServerLeft is sent to a user who stopped being a member, so the client drops the server from its list.
+    messages:
+      broadcastServerLeft:
+        $ref: '#/components/messages/BroadcastServerLeft'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastServerSuspended:
+    address: broadcast.server_suspended
+    title: broadcast.server_suspended
+    description: ServerSuspended is sent to every member when staff suspends the server.
+    messages:
+      broadcastServerSuspended:
+        $ref: '#/components/messages/BroadcastServerSuspended'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastServerReactivated:
+    address: broadcast.server_reactivated
+    title: broadcast.server_reactivated
+    description: ServerReactivated is sent to every member when staff lifts the suspension.
+    messages:
+      broadcastServerReactivated:
+        $ref: '#/components/messages/BroadcastServerReactivated'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastDisconnect:
+    address: broadcast.disconnect
+    title: broadcast.disconnect
+    description: Disconnect makes every instance close the sockets of a user.
+    messages:
+      broadcastDisconnect:
+        $ref: '#/components/messages/BroadcastDisconnect'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastPresenceUpdated:
+    address: broadcast.presence_updated
+    title: broadcast.presence_updated
+    description: PresenceUpdated is sent to whoever should see the connection status of a user.
+    messages:
+      broadcastPresenceUpdated:
+        $ref: '#/components/messages/BroadcastPresenceUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+  broadcastOwnStatusUpdated:
+    address: broadcast.own_status_updated
+    title: broadcast.own_status_updated
+    description: OwnStatusUpdated is sent to a user's own sockets when they change the status they chose.
+    messages:
+      broadcastOwnStatusUpdated:
+        $ref: '#/components/messages/BroadcastOwnStatusUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/messagingBroadcast'
+operations:
+  adminPublishesServerDeletionRequested:
+    action: send
+    title: discordia-admin publica admin.server_deletion_requested
+    channel:
+      $ref: '#/channels/adminServerDeletionRequested'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversReceivesServerDeletionRequested:
+    action: receive
+    title: discordia-servers consume admin.server_deletion_requested
+    channel:
+      $ref: '#/channels/adminServerDeletionRequested'
+    bindings:
+      amqp:
+        ack: true
+  adminPublishesServerReactivated:
+    action: send
+    title: discordia-admin publica admin.server_reactivated
+    channel:
+      $ref: '#/channels/adminServerReactivated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesServerReactivated:
+    action: receive
+    title: discordia-messaging consume admin.server_reactivated
+    channel:
+      $ref: '#/channels/adminServerReactivated'
+    bindings:
+      amqp:
+        ack: true
+  serversReceivesServerReactivated:
+    action: receive
+    title: discordia-servers consume admin.server_reactivated
+    channel:
+      $ref: '#/channels/adminServerReactivated'
+    bindings:
+      amqp:
+        ack: true
+  adminPublishesServerSuspended:
+    action: send
+    title: discordia-admin publica admin.server_suspended
+    channel:
+      $ref: '#/channels/adminServerSuspended'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesServerSuspended:
+    action: receive
+    title: discordia-messaging consume admin.server_suspended
+    channel:
+      $ref: '#/channels/adminServerSuspended'
+    bindings:
+      amqp:
+        ack: true
+  serversReceivesServerSuspended:
+    action: receive
+    title: discordia-servers consume admin.server_suspended
+    channel:
+      $ref: '#/channels/adminServerSuspended'
+    bindings:
+      amqp:
+        ack: true
+  voiceSfuReceivesServerSuspended:
+    action: receive
+    title: discordia-voice-sfu consume admin.server_suspended
+    channel:
+      $ref: '#/channels/adminServerSuspended'
+    bindings:
+      amqp:
+        ack: true
+  adminPublishesStaffMemberAdded:
+    action: send
+    title: discordia-admin publica admin.staff_member_added
+    channel:
+      $ref: '#/channels/adminStaffMemberAdded'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminPublishesStaffMemberRemoved:
+    action: send
+    title: discordia-admin publica admin.staff_member_removed
+    channel:
+      $ref: '#/channels/adminStaffMemberRemoved'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminPublishesUserReactivated:
+    action: send
+    title: discordia-admin publica admin.user_reactivated
+    channel:
+      $ref: '#/channels/adminUserReactivated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  identifyServiceReceivesUserReactivated:
+    action: receive
+    title: discordia-identify-service consume admin.user_reactivated
+    channel:
+      $ref: '#/channels/adminUserReactivated'
+    bindings:
+      amqp:
+        ack: true
+  messagingReceivesUserReactivated:
+    action: receive
+    title: discordia-messaging consume admin.user_reactivated
+    channel:
+      $ref: '#/channels/adminUserReactivated'
+    bindings:
+      amqp:
+        ack: true
+  serversReceivesUserReactivated:
+    action: receive
+    title: discordia-servers consume admin.user_reactivated
+    channel:
+      $ref: '#/channels/adminUserReactivated'
+    bindings:
+      amqp:
+        ack: true
+  voiceSfuReceivesUserReactivated:
+    action: receive
+    title: discordia-voice-sfu consume admin.user_reactivated
+    channel:
+      $ref: '#/channels/adminUserReactivated'
+    bindings:
+      amqp:
+        ack: true
+  adminPublishesUserSuspended:
+    action: send
+    title: discordia-admin publica admin.user_suspended
+    channel:
+      $ref: '#/channels/adminUserSuspended'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  identifyServiceReceivesUserSuspended:
+    action: receive
+    title: discordia-identify-service consume admin.user_suspended
+    channel:
+      $ref: '#/channels/adminUserSuspended'
+    bindings:
+      amqp:
+        ack: true
+  messagingReceivesUserSuspended:
+    action: receive
+    title: discordia-messaging consume admin.user_suspended
+    channel:
+      $ref: '#/channels/adminUserSuspended'
+    bindings:
+      amqp:
+        ack: true
+  serversReceivesUserSuspended:
+    action: receive
+    title: discordia-servers consume admin.user_suspended
+    channel:
+      $ref: '#/channels/adminUserSuspended'
+    bindings:
+      amqp:
+        ack: true
+  voiceSfuReceivesUserSuspended:
+    action: receive
+    title: discordia-voice-sfu consume admin.user_suspended
+    channel:
+      $ref: '#/channels/adminUserSuspended'
+    bindings:
+      amqp:
+        ack: true
+  billingPublishesPremiumUpdated:
+    action: send
+    title: discordia-billing publica billing.premium_updated
+    channel:
+      $ref: '#/channels/billingPremiumUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  identifyServiceReceivesPremiumUpdated:
+    action: receive
+    title: discordia-identify-service consume billing.premium_updated
+    channel:
+      $ref: '#/channels/billingPremiumUpdated'
+    bindings:
+      amqp:
+        ack: true
+  messagingReceivesPremiumUpdated:
+    action: receive
+    title: discordia-messaging consume billing.premium_updated
+    channel:
+      $ref: '#/channels/billingPremiumUpdated'
+    bindings:
+      amqp:
+        ack: true
+  billingPublishesServerBoostRequested:
+    action: send
+    title: discordia-billing publica billing.server_boost_requested
+    channel:
+      $ref: '#/channels/billingServerBoostRequested'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversReceivesServerBoostRequested:
+    action: receive
+    title: discordia-servers consume billing.server_boost_requested
+    channel:
+      $ref: '#/channels/billingServerBoostRequested'
+    bindings:
+      amqp:
+        ack: true
+  billingPublishesServerBoostCancelled:
+    action: send
+    title: discordia-billing publica billing.server_boost_cancelled
+    channel:
+      $ref: '#/channels/billingServerBoostCancelled'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversReceivesServerBoostCancelled:
+    action: receive
+    title: discordia-servers consume billing.server_boost_cancelled
+    channel:
+      $ref: '#/channels/billingServerBoostCancelled'
+    bindings:
+      amqp:
+        ack: true
+  billingPublishesServerBoostRemoved:
+    action: send
+    title: discordia-billing publica billing.server_boost_removed
+    channel:
+      $ref: '#/channels/billingServerBoostRemoved'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversReceivesServerBoostRemoved:
+    action: receive
+    title: discordia-servers consume billing.server_boost_removed
+    channel:
+      $ref: '#/channels/billingServerBoostRemoved'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesServerBoostApplied:
+    action: send
+    title: discordia-servers publica servers.server_boost_applied
+    channel:
+      $ref: '#/channels/serversServerBoostApplied'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  billingReceivesServerBoostApplied:
+    action: receive
+    title: discordia-billing consume servers.server_boost_applied
+    channel:
+      $ref: '#/channels/serversServerBoostApplied'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesServerBoostRejected:
+    action: send
+    title: discordia-servers publica servers.server_boost_rejected
+    channel:
+      $ref: '#/channels/serversServerBoostRejected'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  billingReceivesServerBoostRejected:
+    action: receive
+    title: discordia-billing consume servers.server_boost_rejected
+    channel:
+      $ref: '#/channels/serversServerBoostRejected'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesServerBoostUpdated:
+    action: send
+    title: discordia-servers publica servers.server_boost_updated
+    channel:
+      $ref: '#/channels/serversServerBoostUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesServerBoostUpdated:
+    action: receive
+    title: discordia-messaging consume servers.server_boost_updated
+    channel:
+      $ref: '#/channels/serversServerBoostUpdated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesChannelAccessRevoked:
+    action: send
+    title: discordia-servers publica servers.channel_access_revoked
+    channel:
+      $ref: '#/channels/serversChannelAccessRevoked'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesChannelAccessRevoked:
+    action: receive
+    title: discordia-messaging consume servers.channel_access_revoked
+    channel:
+      $ref: '#/channels/serversChannelAccessRevoked'
+    bindings:
+      amqp:
+        ack: true
+  voiceSfuReceivesChannelAccessRevoked:
+    action: receive
+    title: discordia-voice-sfu consume servers.channel_access_revoked
+    channel:
+      $ref: '#/channels/serversChannelAccessRevoked'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesChannelCreated:
+    action: send
+    title: discordia-servers publica servers.channel_created
+    channel:
+      $ref: '#/channels/serversChannelCreated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesChannelCreated:
+    action: receive
+    title: discordia-messaging consume servers.channel_created
+    channel:
+      $ref: '#/channels/serversChannelCreated'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesChannelCreated:
+    action: receive
+    title: discordia-notifications consume servers.channel_created
+    channel:
+      $ref: '#/channels/serversChannelCreated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesChannelDeleted:
+    action: send
+    title: discordia-servers publica servers.channel_deleted
+    channel:
+      $ref: '#/channels/serversChannelDeleted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesChannelDeleted:
+    action: receive
+    title: discordia-messaging consume servers.channel_deleted
+    channel:
+      $ref: '#/channels/serversChannelDeleted'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesChannelDeleted:
+    action: receive
+    title: discordia-notifications consume servers.channel_deleted
+    channel:
+      $ref: '#/channels/serversChannelDeleted'
+    bindings:
+      amqp:
+        ack: true
+  voiceSfuReceivesChannelDeleted:
+    action: receive
+    title: discordia-voice-sfu consume servers.channel_deleted
+    channel:
+      $ref: '#/channels/serversChannelDeleted'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesMemberJoined:
+    action: send
+    title: discordia-servers publica servers.member_joined
+    channel:
+      $ref: '#/channels/serversMemberJoined'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesMemberJoined:
+    action: receive
+    title: discordia-admin consume servers.member_joined
+    channel:
+      $ref: '#/channels/serversMemberJoined'
+    bindings:
+      amqp:
+        ack: true
+  identifyServiceReceivesMemberJoined:
+    action: receive
+    title: discordia-identify-service consume servers.member_joined
+    channel:
+      $ref: '#/channels/serversMemberJoined'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesMemberJoined:
+    action: receive
+    title: discordia-notifications consume servers.member_joined
+    channel:
+      $ref: '#/channels/serversMemberJoined'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesMemberLeft:
+    action: send
+    title: discordia-servers publica servers.member_left
+    channel:
+      $ref: '#/channels/serversMemberLeft'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesMemberLeft:
+    action: receive
+    title: discordia-admin consume servers.member_left
+    channel:
+      $ref: '#/channels/serversMemberLeft'
+    bindings:
+      amqp:
+        ack: true
+  identifyServiceReceivesMemberLeft:
+    action: receive
+    title: discordia-identify-service consume servers.member_left
+    channel:
+      $ref: '#/channels/serversMemberLeft'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesMemberLeft:
+    action: receive
+    title: discordia-notifications consume servers.member_left
+    channel:
+      $ref: '#/channels/serversMemberLeft'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesDirectMessageCreated:
+    action: send
+    title: discordia-messaging publica messaging.direct_message_created
+    channel:
+      $ref: '#/channels/messagingDirectMessageCreated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesDirectMessageCreated:
+    action: receive
+    title: discordia-notifications consume messaging.direct_message_created
+    channel:
+      $ref: '#/channels/messagingDirectMessageCreated'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesMessageCreated:
+    action: send
+    title: discordia-messaging publica messaging.message_created
+    channel:
+      $ref: '#/channels/messagingMessageCreated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesMessageCreated:
+    action: receive
+    title: discordia-notifications consume messaging.message_created
+    channel:
+      $ref: '#/channels/messagingMessageCreated'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesMessageDeleted:
+    action: send
+    title: discordia-messaging publica messaging.message_deleted
+    channel:
+      $ref: '#/channels/messagingMessageDeleted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesMessageDeleted:
+    action: receive
+    title: discordia-notifications consume messaging.message_deleted
+    channel:
+      $ref: '#/channels/messagingMessageDeleted'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesMessageUpdated:
+    action: send
+    title: discordia-messaging publica messaging.message_updated
+    channel:
+      $ref: '#/channels/messagingMessageUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesMessageUpdated:
+    action: receive
+    title: discordia-notifications consume messaging.message_updated
+    channel:
+      $ref: '#/channels/messagingMessageUpdated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesMemberBanned:
+    action: send
+    title: discordia-servers publica servers.member_banned
+    channel:
+      $ref: '#/channels/serversMemberBanned'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversPublishesMemberKicked:
+    action: send
+    title: discordia-servers publica servers.member_kicked
+    channel:
+      $ref: '#/channels/serversMemberKicked'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversPublishesMemberMuted:
+    action: send
+    title: discordia-servers publica servers.member_muted
+    channel:
+      $ref: '#/channels/serversMemberMuted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversPublishesMemberUnbanned:
+    action: send
+    title: discordia-servers publica servers.member_unbanned
+    channel:
+      $ref: '#/channels/serversMemberUnbanned'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversPublishesMemberUnmuted:
+    action: send
+    title: discordia-servers publica servers.member_unmuted
+    channel:
+      $ref: '#/channels/serversMemberUnmuted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversPublishesModerationActionRecorded:
+    action: send
+    title: discordia-servers publica servers.moderation_action_recorded
+    channel:
+      $ref: '#/channels/serversModerationActionRecorded'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversPublishesWordFilterUpdated:
+    action: send
+    title: discordia-servers publica servers.word_filter_updated
+    channel:
+      $ref: '#/channels/serversWordFilterUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  serversPublishesChannelOverridesUpdated:
+    action: send
+    title: discordia-servers publica servers.channel_overrides_updated
+    channel:
+      $ref: '#/channels/serversChannelOverridesUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesChannelOverridesUpdated:
+    action: receive
+    title: discordia-messaging consume servers.channel_overrides_updated
+    channel:
+      $ref: '#/channels/serversChannelOverridesUpdated'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesChannelOverridesUpdated:
+    action: receive
+    title: discordia-notifications consume servers.channel_overrides_updated
+    channel:
+      $ref: '#/channels/serversChannelOverridesUpdated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesMemberRolesUpdated:
+    action: send
+    title: discordia-servers publica servers.member_roles_updated
+    channel:
+      $ref: '#/channels/serversMemberRolesUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesMemberRolesUpdated:
+    action: receive
+    title: discordia-messaging consume servers.member_roles_updated
+    channel:
+      $ref: '#/channels/serversMemberRolesUpdated'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesMemberRolesUpdated:
+    action: receive
+    title: discordia-notifications consume servers.member_roles_updated
+    channel:
+      $ref: '#/channels/serversMemberRolesUpdated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesOwnerUpdated:
+    action: send
+    title: discordia-servers publica servers.owner_updated
+    channel:
+      $ref: '#/channels/serversOwnerUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesOwnerUpdated:
+    action: receive
+    title: discordia-messaging consume servers.owner_updated
+    channel:
+      $ref: '#/channels/serversOwnerUpdated'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesOwnerUpdated:
+    action: receive
+    title: discordia-notifications consume servers.owner_updated
+    channel:
+      $ref: '#/channels/serversOwnerUpdated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesRoleDeleted:
+    action: send
+    title: discordia-servers publica servers.role_deleted
+    channel:
+      $ref: '#/channels/serversRoleDeleted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesRoleDeleted:
+    action: receive
+    title: discordia-messaging consume servers.role_deleted
+    channel:
+      $ref: '#/channels/serversRoleDeleted'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesRoleDeleted:
+    action: receive
+    title: discordia-notifications consume servers.role_deleted
+    channel:
+      $ref: '#/channels/serversRoleDeleted'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesRoleUpdated:
+    action: send
+    title: discordia-servers publica servers.role_updated
+    channel:
+      $ref: '#/channels/serversRoleUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesRoleUpdated:
+    action: receive
+    title: discordia-messaging consume servers.role_updated
+    channel:
+      $ref: '#/channels/serversRoleUpdated'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesRoleUpdated:
+    action: receive
+    title: discordia-notifications consume servers.role_updated
+    channel:
+      $ref: '#/channels/serversRoleUpdated'
+    bindings:
+      amqp:
+        ack: true
+  metricsPublishesHealthChanged:
+    action: send
+    title: discordia-metrics publica platform.health_changed
+    channel:
+      $ref: '#/channels/platformHealthChanged'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesHealthChanged:
+    action: receive
+    title: discordia-notifications consume platform.health_changed
+    channel:
+      $ref: '#/channels/platformHealthChanged'
+    bindings:
+      amqp:
+        ack: true
+  metricsPublishesStatusChanged:
+    action: send
+    title: discordia-metrics publica platform.status_changed
+    channel:
+      $ref: '#/channels/platformStatusChanged'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesStatusChanged:
+    action: receive
+    title: discordia-notifications consume platform.status_changed
+    channel:
+      $ref: '#/channels/platformStatusChanged'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesUserPresenceChanged:
+    action: send
+    title: discordia-messaging publica messaging.user_presence_changed
+    channel:
+      $ref: '#/channels/messagingUserPresenceChanged'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesUserPresenceChanged:
+    action: receive
+    title: discordia-notifications consume messaging.user_presence_changed
+    channel:
+      $ref: '#/channels/messagingUserPresenceChanged'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesReportUpdated:
+    action: send
+    title: discordia-servers publica servers.report_updated
+    channel:
+      $ref: '#/channels/serversReportUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesReportUpdated:
+    action: receive
+    title: discordia-admin consume servers.report_updated
+    channel:
+      $ref: '#/channels/serversReportUpdated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesEmojiCreated:
+    action: send
+    title: discordia-servers publica servers.emoji_created
+    channel:
+      $ref: '#/channels/serversEmojiCreated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesEmojiCreated:
+    action: receive
+    title: discordia-messaging consume servers.emoji_created
+    channel:
+      $ref: '#/channels/serversEmojiCreated'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesEmojiDeleted:
+    action: send
+    title: discordia-servers publica servers.emoji_deleted
+    channel:
+      $ref: '#/channels/serversEmojiDeleted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesEmojiDeleted:
+    action: receive
+    title: discordia-messaging consume servers.emoji_deleted
+    channel:
+      $ref: '#/channels/serversEmojiDeleted'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesServerDeleted:
+    action: send
+    title: discordia-servers publica servers.server_deleted
+    channel:
+      $ref: '#/channels/serversServerDeleted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesServerDeleted:
+    action: receive
+    title: discordia-admin consume servers.server_deleted
+    channel:
+      $ref: '#/channels/serversServerDeleted'
+    bindings:
+      amqp:
+        ack: true
+  messagingReceivesServerDeleted:
+    action: receive
+    title: discordia-messaging consume servers.server_deleted
+    channel:
+      $ref: '#/channels/serversServerDeleted'
+    bindings:
+      amqp:
+        ack: true
+  notificationsReceivesServerDeleted:
+    action: receive
+    title: discordia-notifications consume servers.server_deleted
+    channel:
+      $ref: '#/channels/serversServerDeleted'
+    bindings:
+      amqp:
+        ack: true
+  voiceSfuReceivesServerDeleted:
+    action: receive
+    title: discordia-voice-sfu consume servers.server_deleted
+    channel:
+      $ref: '#/channels/serversServerDeleted'
+    bindings:
+      amqp:
+        ack: true
+  serversPublishesServerUpdated:
+    action: send
+    title: discordia-servers publica servers.server_updated
+    channel:
+      $ref: '#/channels/serversServerUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesServerUpdated:
+    action: receive
+    title: discordia-admin consume servers.server_updated
+    channel:
+      $ref: '#/channels/serversServerUpdated'
+    bindings:
+      amqp:
+        ack: true
+  identifyServicePublishesAccountRegistered:
+    action: send
+    title: discordia-identify-service publica users.account_registered
+    channel:
+      $ref: '#/channels/usersAccountRegistered'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesAccountRegistered:
+    action: receive
+    title: discordia-admin consume users.account_registered
+    channel:
+      $ref: '#/channels/usersAccountRegistered'
+    bindings:
+      amqp:
+        ack: true
+  identifyServicePublishesEmailVerified:
+    action: send
+    title: discordia-identify-service publica users.email_verified
+    channel:
+      $ref: '#/channels/usersEmailVerified'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesEmailVerified:
+    action: receive
+    title: discordia-admin consume users.email_verified
+    channel:
+      $ref: '#/channels/usersEmailVerified'
+    bindings:
+      amqp:
+        ack: true
+  identifyServicePublishesProfileUpdated:
+    action: send
+    title: discordia-identify-service publica users.profile_updated
+    channel:
+      $ref: '#/channels/usersProfileUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesProfileUpdated:
+    action: receive
+    title: discordia-admin consume users.profile_updated
+    channel:
+      $ref: '#/channels/usersProfileUpdated'
+    bindings:
+      amqp:
+        ack: true
+  messagingReceivesProfileUpdated:
+    action: receive
+    title: discordia-messaging consume users.profile_updated
+    channel:
+      $ref: '#/channels/usersProfileUpdated'
+    bindings:
+      amqp:
+        ack: true
+  serversReceivesProfileUpdated:
+    action: receive
+    title: discordia-servers consume users.profile_updated
+    channel:
+      $ref: '#/channels/usersProfileUpdated'
+    bindings:
+      amqp:
+        ack: true
+  voiceSfuPublishesParticipantJoined:
+    action: send
+    title: discordia-voice-sfu publica voice.participant_joined
+    channel:
+      $ref: '#/channels/voiceParticipantJoined'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  voiceSfuPublishesParticipantLeft:
+    action: send
+    title: discordia-voice-sfu publica voice.participant_left
+    channel:
+      $ref: '#/channels/voiceParticipantLeft'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  voiceSfuPublishesPrivateCall:
+    action: send
+    title: discordia-voice-sfu publica voice.private_call
+    channel:
+      $ref: '#/channels/voicePrivateCall'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingPublishesBroadcastNewMessage:
+    action: send
+    title: discordia-messaging publica broadcast.new_message
+    channel:
+      $ref: '#/channels/broadcastNewMessage'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastNewMessage:
+    action: receive
+    title: discordia-messaging consume broadcast.new_message
+    channel:
+      $ref: '#/channels/broadcastNewMessage'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastMessageUpdated:
+    action: send
+    title: discordia-messaging publica broadcast.message_updated
+    channel:
+      $ref: '#/channels/broadcastMessageUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastMessageUpdated:
+    action: receive
+    title: discordia-messaging consume broadcast.message_updated
+    channel:
+      $ref: '#/channels/broadcastMessageUpdated'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastMessageDeleted:
+    action: send
+    title: discordia-messaging publica broadcast.message_deleted
+    channel:
+      $ref: '#/channels/broadcastMessageDeleted'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastMessageDeleted:
+    action: receive
+    title: discordia-messaging consume broadcast.message_deleted
+    channel:
+      $ref: '#/channels/broadcastMessageDeleted'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastReactionUpdated:
+    action: send
+    title: discordia-messaging publica broadcast.reaction_updated
+    channel:
+      $ref: '#/channels/broadcastReactionUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastReactionUpdated:
+    action: receive
+    title: discordia-messaging consume broadcast.reaction_updated
+    channel:
+      $ref: '#/channels/broadcastReactionUpdated'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastNewDm:
+    action: send
+    title: discordia-messaging publica broadcast.new_dm
+    channel:
+      $ref: '#/channels/broadcastNewDm'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastNewDm:
+    action: receive
+    title: discordia-messaging consume broadcast.new_dm
+    channel:
+      $ref: '#/channels/broadcastNewDm'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastMention:
+    action: send
+    title: discordia-messaging publica broadcast.mention
+    channel:
+      $ref: '#/channels/broadcastMention'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastMention:
+    action: receive
+    title: discordia-messaging consume broadcast.mention
+    channel:
+      $ref: '#/channels/broadcastMention'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastAccessRevoked:
+    action: send
+    title: discordia-messaging publica broadcast.access_revoked
+    channel:
+      $ref: '#/channels/broadcastAccessRevoked'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastAccessRevoked:
+    action: receive
+    title: discordia-messaging consume broadcast.access_revoked
+    channel:
+      $ref: '#/channels/broadcastAccessRevoked'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastServerLeft:
+    action: send
+    title: discordia-messaging publica broadcast.server_left
+    channel:
+      $ref: '#/channels/broadcastServerLeft'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastServerLeft:
+    action: receive
+    title: discordia-messaging consume broadcast.server_left
+    channel:
+      $ref: '#/channels/broadcastServerLeft'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastServerSuspended:
+    action: send
+    title: discordia-messaging publica broadcast.server_suspended
+    channel:
+      $ref: '#/channels/broadcastServerSuspended'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastServerSuspended:
+    action: receive
+    title: discordia-messaging consume broadcast.server_suspended
+    channel:
+      $ref: '#/channels/broadcastServerSuspended'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastServerReactivated:
+    action: send
+    title: discordia-messaging publica broadcast.server_reactivated
+    channel:
+      $ref: '#/channels/broadcastServerReactivated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastServerReactivated:
+    action: receive
+    title: discordia-messaging consume broadcast.server_reactivated
+    channel:
+      $ref: '#/channels/broadcastServerReactivated'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastDisconnect:
+    action: send
+    title: discordia-messaging publica broadcast.disconnect
+    channel:
+      $ref: '#/channels/broadcastDisconnect'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastDisconnect:
+    action: receive
+    title: discordia-messaging consume broadcast.disconnect
+    channel:
+      $ref: '#/channels/broadcastDisconnect'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastPresenceUpdated:
+    action: send
+    title: discordia-messaging publica broadcast.presence_updated
+    channel:
+      $ref: '#/channels/broadcastPresenceUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastPresenceUpdated:
+    action: receive
+    title: discordia-messaging consume broadcast.presence_updated
+    channel:
+      $ref: '#/channels/broadcastPresenceUpdated'
+    bindings:
+      amqp:
+        ack: true
+  messagingPublishesBroadcastOwnStatusUpdated:
+    action: send
+    title: discordia-messaging publica broadcast.own_status_updated
+    channel:
+      $ref: '#/channels/broadcastOwnStatusUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  messagingReceivesBroadcastOwnStatusUpdated:
+    action: receive
+    title: discordia-messaging consume broadcast.own_status_updated
+    channel:
+      $ref: '#/channels/broadcastOwnStatusUpdated'
+    bindings:
+      amqp:
+        ack: true
+components:
+  channelBindings:
+    discordiaEvents:
+      amqp:
+        is: routingKey
+        exchange:
+          name: discordia.events
+          type: topic
+          durable: true
+          autoDelete: false
+          vhost: /
+    messagingBroadcast:
+      amqp:
+        is: routingKey
+        exchange:
+          name: messaging.broadcast
+          type: fanout
+          durable: true
+          autoDelete: false
+          vhost: /
+  messages:
+    ServerDeletionRequested:
+      name: ServerDeletionRequested
+      title: admin.server_deletion_requested
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerDeletionRequested'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: signature
+            version: 2
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerReactivated:
+      name: ServerReactivated
+      title: admin.server_reactivated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerReactivated'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: signature
+            version: 2
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerSuspended:
+      name: ServerSuspended
+      title: admin.server_suspended
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerSuspended'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: signature
+            version: 2
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    StaffMemberAdded:
+      name: StaffMemberAdded
+      title: admin.staff_member_added
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/StaffMemberAdded'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            signature: signature
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    StaffMemberRemoved:
+      name: StaffMemberRemoved
+      title: admin.staff_member_removed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/StaffMemberRemoved'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            signature: signature
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    UserReactivated:
+      name: UserReactivated
+      title: admin.user_reactivated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/UserReactivated'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            signature: signature
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            version: 2
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    UserSuspended:
+      name: UserSuspended
+      title: admin.user_suspended
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/UserSuspended'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            signature: signature
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            version: 2
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    PremiumUpdated:
+      name: PremiumUpdated
+      title: billing.premium_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PremiumUpdated'
+      examples:
+        - payload:
+            active: true
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            premium_until: "2026-11-10T15:00:00Z"
+            renews: true
+            signature: signature
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            version: 2
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerBoostRequested:
+      name: ServerBoostRequested
+      title: billing.server_boost_requested
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerBoostRequested'
+      examples:
+        - payload:
+            boost_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerBoostCancelled:
+      name: ServerBoostCancelled
+      title: billing.server_boost_cancelled
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerBoostCancelled'
+      examples:
+        - payload:
+            boost_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerBoostRemoved:
+      name: ServerBoostRemoved
+      title: billing.server_boost_removed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerBoostRemoved'
+      examples:
+        - payload:
+            boost_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerBoostApplied:
+      name: ServerBoostApplied
+      title: servers.server_boost_applied
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerBoostApplied'
+      examples:
+        - payload:
+            boost_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerBoostRejected:
+      name: ServerBoostRejected
+      title: servers.server_boost_rejected
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerBoostRejected'
+      examples:
+        - payload:
+            boost_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            reason: server_not_found
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerBoostUpdated:
+      name: ServerBoostUpdated
+      title: servers.server_boost_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerBoostUpdated'
+      examples:
+        - payload:
+            boost_count: 1
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            level: 1
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            version: 1
+    ChannelAccessRevoked:
+      name: ChannelAccessRevoked
+      title: servers.channel_access_revoked
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ChannelAccessRevoked'
+      examples:
+        - payload:
+            channel_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            user_ids:
+              - user-ids
+    ChannelCreated:
+      name: ChannelCreated
+      title: servers.channel_created
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ChannelCreated'
+      examples:
+        - payload:
+            channel_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            kind: text
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    ChannelDeleted:
+      name: ChannelDeleted
+      title: servers.channel_deleted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ChannelDeleted'
+      examples:
+        - payload:
+            channel_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    MemberJoined:
+      name: MemberJoined
+      title: servers.member_joined
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberJoined'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            user_id: user-id
+    MemberLeft:
+      name: MemberLeft
+      title: servers.member_left
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberLeft'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            user_id: user-id
+    DirectMessageCreated:
+      name: DirectMessageCreated
+      title: messaging.direct_message_created
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DirectMessageCreated'
+      examples:
+        - payload:
+            author_id: author-id
+            content_preview: content-preview
+            conversation_id: conversation-id
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            message_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            recipient_id: recipient-id
+    MessageCreated:
+      name: MessageCreated
+      title: messaging.message_created
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessageCreated'
+      examples:
+        - payload:
+            author_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            channel_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            channel_name: channel-name
+            content_preview: content-preview
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            mentioned_user_ids:
+              - 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            message_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    MessageDeleted:
+      name: MessageDeleted
+      title: messaging.message_deleted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessageDeleted'
+      examples:
+        - payload:
+            author_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            channel_id: channel-id
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            message_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    MessageUpdated:
+      name: MessageUpdated
+      title: messaging.message_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MessageUpdated'
+      examples:
+        - payload:
+            author_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            channel_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            channel_name: channel-name
+            content_preview: content-preview
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            mentioned_user_ids:
+              - 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            message_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    MemberBanned:
+      name: MemberBanned
+      title: servers.member_banned
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberBanned'
+      examples:
+        - payload:
+            banned_by: banned-by
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            user_id: user-id
+    MemberKicked:
+      name: MemberKicked
+      title: servers.member_kicked
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberKicked'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            kicked_by: kicked-by
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            user_id: user-id
+    MemberMuted:
+      name: MemberMuted
+      title: servers.member_muted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberMuted'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            muted_by: muted-by
+            occurred_at: "2026-11-10T15:00:00Z"
+            reason: reason
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            until_at: "2026-11-10T15:00:00Z"
+            user_id: user-id
+    MemberUnbanned:
+      name: MemberUnbanned
+      title: servers.member_unbanned
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberUnbanned'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            unbanned_by: unbanned-by
+            user_id: user-id
+    MemberUnmuted:
+      name: MemberUnmuted
+      title: servers.member_unmuted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberUnmuted'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            reason: manual
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            unmuted_by: unmuted-by
+            user_id: user-id
+    ModerationActionRecorded:
+      name: ModerationActionRecorded
+      title: servers.moderation_action_recorded
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ModerationActionRecorded'
+      examples:
+        - payload:
+            action: ban
+            action_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            target_user_id: target-user-id
+    WordFilterUpdated:
+      name: WordFilterUpdated
+      title: servers.word_filter_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/WordFilterUpdated'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            words:
+              - words
+    ChannelOverridesUpdated:
+      name: ChannelOverridesUpdated
+      title: servers.channel_overrides_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ChannelOverridesUpdated'
+      examples:
+        - payload:
+            channel_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            overrides:
+              - allow:
+                  - allow
+                deny:
+                  - deny
+                role_id: role-id
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    MemberRolesUpdated:
+      name: MemberRolesUpdated
+      title: servers.member_roles_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MemberRolesUpdated'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            role_ids:
+              - 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            user_id: user-id
+    OwnerUpdated:
+      name: OwnerUpdated
+      title: servers.owner_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OwnerUpdated'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            owner_id: owner-id
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    RoleDeleted:
+      name: RoleDeleted
+      title: servers.role_deleted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RoleDeleted'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            role_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    RoleUpdated:
+      name: RoleUpdated
+      title: servers.role_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RoleUpdated'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            is_everyone: true
+            occurred_at: "2026-11-10T15:00:00Z"
+            permissions:
+              - permissions
+            role_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    HealthChanged:
+      name: HealthChanged
+      title: platform.health_changed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/HealthChanged'
+      examples:
+        - payload:
+            audience_user_ids:
+              - audience-user-ids
+            consecutive_failures: 1
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            previous_status: unknown
+            service: service
+            status: operational
+    StatusChanged:
+      name: StatusChanged
+      title: platform.status_changed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/StatusChanged'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            status: operational
+    UserPresenceChanged:
+      name: UserPresenceChanged
+      title: messaging.user_presence_changed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/UserPresenceChanged'
+      examples:
+        - payload:
+            connections: active
+            do_not_disturb: true
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            version: 1
+    ReportUpdated:
+      name: ReportUpdated
+      title: servers.report_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ReportUpdated'
+      examples:
+        - payload:
+            channel_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            created_at: "2026-11-10T15:00:00Z"
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            kind: user
+            message_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            reason: reason
+            report_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            reported_user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            resolved_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            status: pending
+    EmojiCreated:
+      name: EmojiCreated
+      title: servers.emoji_created
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EmojiCreated'
+      examples:
+        - payload:
+            animated: true
+            emoji_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            image_url: https://cdn.example.com/imagen.png
+            name: custom_emoji
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    EmojiDeleted:
+      name: EmojiDeleted
+      title: servers.emoji_deleted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EmojiDeleted'
+      examples:
+        - payload:
+            animated: true
+            emoji_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            image_url: https://cdn.example.com/imagen.png
+            name: custom_emoji
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    ServerDeleted:
+      name: ServerDeleted
+      title: servers.server_deleted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerDeleted'
+      examples:
+        - payload:
+            channel_ids:
+              - 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    ServerUpdated:
+      name: ServerUpdated
+      title: servers.server_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerUpdated'
+      examples:
+        - payload:
+            created_at: "2026-11-10T15:00:00Z"
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            owner_id: owner-id
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    AccountRegistered:
+      name: AccountRegistered
+      title: users.account_registered
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AccountRegistered'
+      examples:
+        - payload:
+            created_at: "2026-11-10T15:00:00Z"
+            email: ana@example.com
+            email_verified: true
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    EmailVerified:
+      name: EmailVerified
+      title: users.email_verified
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EmailVerified'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            verified_at: "2026-11-10T15:00:00Z"
+    ProfileUpdated:
+      name: ProfileUpdated
+      title: users.profile_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ProfileUpdated'
+      examples:
+        - payload:
+            avatar_url: avatar-url
+            description: description
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            status_emoji: status-emoji
+            status_text: status-text
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            version: 2
+    ParticipantJoined:
+      name: ParticipantJoined
+      title: voice.participant_joined
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ParticipantJoined'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_type: voice.participant_joined
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            participant_id: participant-id
+            room_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    ParticipantLeft:
+      name: ParticipantLeft
+      title: voice.participant_left
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ParticipantLeft'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_type: voice.participant_joined
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            participant_id: participant-id
+            room_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    PrivateCall:
+      name: PrivateCall
+      title: voice.private_call
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PrivateCall'
+      examples:
+        - payload:
+            call_id: call-id
+            caller_id: caller-id
+            conversation_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            ended_by: ended-by
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_type: voice.private_call
+            occurred_at: "2026-11-10T15:00:00Z"
+            reason: reason
+            recipient_id: recipient-id
+            room_name: room-name
+            status: ringing
+    BroadcastNewMessage:
+      name: BroadcastNewMessage
+      title: broadcast.new_message
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastNewMessage'
+      examples:
+        - payload:
+            event: new_message
+            event_id: event-id
+            payload:
+              attachments:
+                - clave: valor
+              channel_id: channel-id
+              client_id: client-id
+              content: content
+              edited: true
+              edited_at: "2026-11-10T15:00:00Z"
+              id: id
+              inserted_at: "2026-11-10T15:00:00Z"
+              mention_everyone: true
+              mention_roles:
+                - mention-roles
+              mentions:
+                - mentions
+              server_id: server-id
+              user_id: user-id
+            topic: channel:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastMessageUpdated:
+      name: BroadcastMessageUpdated
+      title: broadcast.message_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastMessageUpdated'
+      examples:
+        - payload:
+            event: message_updated
+            event_id: event-id
+            payload:
+              attachments:
+                - clave: valor
+              channel_id: channel-id
+              client_id: client-id
+              content: content
+              edited: true
+              edited_at: "2026-11-10T15:00:00Z"
+              id: id
+              inserted_at: "2026-11-10T15:00:00Z"
+              mention_everyone: true
+              mention_roles:
+                - mention-roles
+              mentions:
+                - mentions
+              server_id: server-id
+              user_id: user-id
+            topic: channel:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastMessageDeleted:
+      name: BroadcastMessageDeleted
+      title: broadcast.message_deleted
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastMessageDeleted'
+      examples:
+        - payload:
+            event: message_deleted
+            event_id: event-id
+            payload:
+              channel_id: channel-id
+              deleted_at: "2026-11-10T15:00:00Z"
+              id: id
+              server_id: server-id
+            topic: channel:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastReactionUpdated:
+      name: BroadcastReactionUpdated
+      title: broadcast.reaction_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastReactionUpdated'
+      examples:
+        - payload:
+            event: reaction_updated
+            event_id: event-id
+            payload:
+              action: action
+              channel_id: channel-id
+              count: 1
+              emoji: emoji
+              message_id: message-id
+              user_id: user-id
+            topic: channel:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastNewDm:
+      name: BroadcastNewDm
+      title: broadcast.new_dm
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastNewDm'
+      examples:
+        - payload:
+            event: new_dm
+            event_id: event-id
+            payload:
+              conversation_id: conversation-id
+              message:
+                attachments:
+                  - clave: valor
+                channel_id: channel-id
+                client_id: client-id
+                content: content
+                edited: true
+                edited_at: "2026-11-10T15:00:00Z"
+                id: id
+                inserted_at: "2026-11-10T15:00:00Z"
+                mention_everyone: true
+                mention_roles:
+                  - mention-roles
+                mentions:
+                  - mentions
+                server_id: server-id
+                user_id: user-id
+              partner_id: partner-id
+            topic: user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastMention:
+      name: BroadcastMention
+      title: broadcast.mention
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastMention'
+      examples:
+        - payload:
+            event: mention
+            event_id: event-id
+            payload:
+              channel_id: channel-id
+              message:
+                attachments:
+                  - clave: valor
+                channel_id: channel-id
+                client_id: client-id
+                content: content
+                edited: true
+                edited_at: "2026-11-10T15:00:00Z"
+                id: id
+                inserted_at: "2026-11-10T15:00:00Z"
+                mention_everyone: true
+                mention_roles:
+                  - mention-roles
+                mentions:
+                  - mentions
+                server_id: server-id
+                user_id: user-id
+              server_id: server-id
+            topic: user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastAccessRevoked:
+      name: BroadcastAccessRevoked
+      title: broadcast.access_revoked
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastAccessRevoked'
+      examples:
+        - payload:
+            event: access_revoked
+            event_id: event-id
+            payload:
+              channel_id: channel-id
+              reason: reason
+              server_id: server-id
+              user_id: user-id
+            topic: channel:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastServerLeft:
+      name: BroadcastServerLeft
+      title: broadcast.server_left
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastServerLeft'
+      examples:
+        - payload:
+            event: server_left
+            event_id: event-id
+            payload:
+              server_id: server-id
+            topic: user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastServerSuspended:
+      name: BroadcastServerSuspended
+      title: broadcast.server_suspended
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastServerSuspended'
+      examples:
+        - payload:
+            event: server_suspended
+            event_id: event-id
+            payload:
+              server_id: server-id
+            topic: user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastServerReactivated:
+      name: BroadcastServerReactivated
+      title: broadcast.server_reactivated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastServerReactivated'
+      examples:
+        - payload:
+            event: server_reactivated
+            event_id: event-id
+            payload:
+              server_id: server-id
+            topic: user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastDisconnect:
+      name: BroadcastDisconnect
+      title: broadcast.disconnect
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastDisconnect'
+      examples:
+        - payload:
+            event: disconnect
+            event_id: event-id
+            payload: {}
+            topic: user_socket:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastPresenceUpdated:
+      name: BroadcastPresenceUpdated
+      title: broadcast.presence_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastPresenceUpdated'
+      examples:
+        - payload:
+            event: presence_updated
+            event_id: event-id
+            payload:
+              status: status
+              user_id: user-id
+              version: 1
+            topic: presence:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    BroadcastOwnStatusUpdated:
+      name: BroadcastOwnStatusUpdated
+      title: broadcast.own_status_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BroadcastOwnStatusUpdated'
+      examples:
+        - payload:
+            event: own_status_updated
+            event_id: event-id
+            payload:
+              status: status
+              version: 1
+            topic: user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+  schemas:
+    ServerDeletionRequested:
+      description: 'ServerDeletionRequested is published by admin when staff asks to delete a server. It is a request, not the fact: servers runs the same cascade it runs when the owner deletes the server and then publishes servers.server_deleted, which the other services already consume. It is irreversible, so servers must check the signature before touching anything. Same fields as ServerSuspended.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+          description: Servidor suspendido, reactivado o a eliminar (ID de discordia-servers).
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          description: moderation_version del servidor en admin. Crece con cada suspensión, reactivación o eliminación; ordena los eventos del mismo servidor.
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, server_id, version, signature]
+    ServerReactivated:
+      description: ServerReactivated is sent to every member when staff lifts the suspension.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+          description: Servidor suspendido, reactivado o a eliminar (ID de discordia-servers).
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          description: moderation_version del servidor en admin. Crece con cada suspensión, reactivación o eliminación; ordena los eventos del mismo servidor.
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, server_id, version, signature]
+    ServerSuspended:
+      description: ServerSuspended is sent to every member when staff suspends the server.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+          description: Servidor suspendido, reactivado o a eliminar (ID de discordia-servers).
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          description: moderation_version del servidor en admin. Crece con cada suspensión, reactivación o eliminación; ordena los eventos del mismo servidor.
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, server_id, version, signature]
+    StaffMemberAdded:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+        signature:
+          type: string
+      required: [event_id, occurred_at, user_id, signature]
+    StaffMemberRemoved:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+        signature:
+          type: string
+      required: [event_id, occurred_at, user_id, signature]
+    UserReactivated:
+      description: UserReactivated is published by admin when staff lifts a suspension. Same fields and rules as UserSuspended.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+          description: Usuario suspendido o reactivado (ID de discordia-identify).
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          description: suspension_version del usuario en admin. Crece con cada suspensión o reactivación; ordena los eventos del mismo usuario.
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, user_id, version, signature]
+    UserSuspended:
+      description: 'UserSuspended is published by admin when staff suspends an account. Every service that serves users (identify, servers, messaging, voice) reacts by rejecting anything that user does and cutting their open sessions. Version is admin''s suspension_version for that user: it grows with every suspension or reactivation, and a consumer applies an event only if its version is higher than the one it already has, so duplicated or out-of-order deliveries are harmless. The reason for the suspension never travels (data minimisation).'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+          description: Usuario suspendido o reactivado (ID de discordia-identify).
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          description: suspension_version del usuario en admin. Crece con cada suspensión o reactivación; ordena los eventos del mismo usuario.
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, user_id, version, signature]
+    PremiumUpdated:
+      description: 'PremiumUpdated is a full snapshot of a user''s Premium, not a diff. billing publishes it when Premium starts, renews, stops renewing, is revoked (refund or chargeback) or expires. Active is what consumers apply. PremiumUntil (nil if the user never paid) and Renews are for display: when PremiumUntil passes, billing publishes another snapshot with Active false, so consumers never need a clock. Version grows with every snapshot of the same user; a consumer applies an event only if its version is higher than the one it already has, so duplicated or out-of-order deliveries are harmless.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+          description: Usuario (ID de discordia-identify).
+        active:
+          type: boolean
+          description: Si el usuario tiene Premium ahora. Es lo único que el consumidor necesita aplicar.
+        premium_until:
+          type: [string, "null"]
+          format: date-time
+          description: Hasta cuándo está pago, en UTC. `null` si nunca pagó.
+        renews:
+          type: boolean
+          description: Si Mercado Pago va a volver a cobrar al llegar `premium_until`.
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Crece con cada foto del mismo usuario; ordena los eventos.
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, user_id, active, premium_until, renews, version, signature]
+    ServerBoostRequested:
+      description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        boost_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        signature:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+      required: [event_id, occurred_at, boost_id, server_id, user_id, signature]
+    ServerBoostCancelled:
+      description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        boost_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        signature:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+      required: [event_id, occurred_at, boost_id, server_id, user_id, signature]
+    ServerBoostRemoved:
+      description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        boost_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        signature:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+      required: [event_id, occurred_at, boost_id, server_id, user_id, signature]
+    ServerBoostApplied:
+      description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        boost_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        signature:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+      required: [event_id, occurred_at, boost_id, server_id, user_id, signature]
+    ServerBoostRejected:
+      description: 'SagaEvent is the message of every signed step. Processing it twice has no effect: BoostID identifies the boost on both sides.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        boost_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        reason:
+          type: string
+          enum:
+            - server_not_found
+            - server_suspended
+            - not_a_member
+            - cancelled
+          description: Reason is only set on servers.server_boost_rejected.
+        signature:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+      required: [event_id, occurred_at, boost_id, server_id, user_id, signature, reason]
+    ServerBoostUpdated:
+      description: ServerBoostUpdated is a full snapshot of a server's boosts, not a diff. A consumer applies it only if Version is higher than the one it has, so duplicated or out-of-order deliveries are harmless.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        boost_count:
+          type: integer
+          minimum: 0
+        level:
+          type: integer
+          minimum: 0
+          maximum: 3
+          description: 0 hasta 4 boosts, 1 desde 5, 2 desde 15 y 3 desde 30.
+        version:
+          type: integer
+          format: int64
+      required: [event_id, occurred_at, server_id, boost_count, level, version]
+    ChannelAccessRevoked:
+      description: 'ChannelAccessRevoked is published when members who could see a channel (VIEW_CHANNELS after its per-role overrides) no longer can: an override or a role''s permissions changed, a role was assigned, removed or deleted, the ownership was transferred, or the member was kicked, banned or left. There is one event per affected channel, text or voice; UserIDs holds only the members who lost access, never empty. Consumers cut what those users have open in the channel (a messaging socket, a voice room); gaining access is never published.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        channel_id:
+          type: string
+          format: uuid
+        user_ids:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: Usuarios que perdieron el acceso a ese canal. Nunca vacío, sin repetidos.
+      required: [event_id, occurred_at, server_id, channel_id, user_ids]
+    ChannelCreated:
+      description: ChannelCreated is published when a text or voice channel is created inside a server.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        channel_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+            - text
+            - voice
+      required: [event_id, occurred_at, server_id, channel_id, name, kind]
+    ChannelDeleted:
+      description: ChannelDeleted is published when a channel is removed from a server.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        channel_id:
+          type: string
+          format: uuid
+      required: [event_id, occurred_at, server_id, channel_id]
+    MemberJoined:
+      description: MemberJoined is published when a user joins a server.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          description: ID del usuario (emitido por discordia-identify).
+      required: [event_id, occurred_at, server_id, user_id]
+    MemberLeft:
+      description: MemberLeft is published when a user leaves (or is removed from) a server.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+      required: [event_id, occurred_at, server_id, user_id]
+    DirectMessageCreated:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        conversation_id:
+          type: string
+          description: Id de la conversación (determinístico a partir de los dos participantes).
+        message_id:
+          type: string
+          format: uuid
+          description: UUID v7 del mensaje, ordenable por tiempo de creación.
+        author_id:
+          type: string
+          description: Quien escribió el mensaje.
+        recipient_id:
+          type: string
+          description: El otro participante de la conversación.
+        content_preview:
+          type: string
+          maxLength: 160
+          description: Extracto del texto (unos 140 caracteres), opcional. Solo para armar el aviso push; el consumidor no debe guardarlo.
+      required: [event_id, occurred_at, conversation_id, message_id, author_id, recipient_id]
+    MessageCreated:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        channel_id:
+          type: string
+          format: uuid
+        message_id:
+          type: string
+          format: uuid
+          description: UUID v7 del mensaje, ordenable por tiempo de creación.
+        author_id:
+          type: string
+          format: uuid
+        mentioned_user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Usuarios mencionados y ya validados por `messaging`, sin el autor. Puede ser una lista vacía.
+        channel_name:
+          type: string
+          description: Nombre del canal. Opcional; solo para armar el aviso push.
+        content_preview:
+          type: string
+          maxLength: 160
+          description: Extracto del texto (unos 140 caracteres), opcional. Solo para armar el aviso push; el consumidor no debe guardarlo.
+      required: [event_id, occurred_at, server_id, channel_id, message_id, author_id, mentioned_user_ids]
+    MessageDeleted:
+      description: MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+          description: Servidor del canal. No viaja si el mensaje era directo.
+        channel_id:
+          type: string
+          description: Canal del mensaje, o la conversación si era un mensaje directo.
+        message_id:
+          type: string
+          format: uuid
+        author_id:
+          type: string
+          format: uuid
+      required: [event_id, occurred_at, channel_id, message_id, author_id]
+    MessageUpdated:
+      description: 'MessageUpdated is published when the text of a message in a server channel is edited. It carries the mentions the message has after the edit, so a consumer can add the notification of whoever the edit mentioned and remove the one of whoever it stopped mentioning. OccurredAt is the moment of the edit. Direct messages never publish it: they have no mentions.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        channel_id:
+          type: string
+          format: uuid
+        message_id:
+          type: string
+          format: uuid
+        author_id:
+          type: string
+          format: uuid
+        mentioned_user_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Menciones que el mensaje tiene después de la edición, ya validadas y sin el autor. Puede ser una lista vacía.
+        channel_name:
+          type: string
+          description: Nombre del canal. Opcional; solo para armar el aviso push.
+        content_preview:
+          type: string
+          maxLength: 160
+          description: Extracto del texto editado (unos 140 caracteres), opcional. Solo para armar el aviso push; el consumidor no debe guardarlo.
+      required: [event_id, occurred_at, server_id, channel_id, message_id, author_id, mentioned_user_ids]
+    MemberBanned:
+      description: MemberBanned is published when a member is banned from a server. The same transaction also publishes membership.MemberLeft, so consumers that only track membership don't need to know about bans.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          description: Usuario baneado.
+        banned_by:
+          type: string
+          description: Usuario (owner, administrador o moderador con BAN_MEMBERS) que ejecutó el ban.
+      required: [event_id, occurred_at, server_id, user_id, banned_by]
+    MemberKicked:
+      description: MemberKicked is published when a member is kicked from a server. Unlike a ban, nothing stops them from rejoining with a valid invitation. The same transaction also publishes membership.MemberLeft, so consumers that only track membership don't need to know about kicks.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          description: Usuario expulsado.
+        kicked_by:
+          type: string
+          description: Usuario (owner, administrador o miembro con KICK_MEMBERS) que ejecutó la expulsión.
+      required: [event_id, occurred_at, server_id, user_id, kicked_by]
+    MemberMuted:
+      description: MemberMuted is published when a member loses the ability to send messages and publish voice for a limited period. The session remains connected.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+        muted_by:
+          type: string
+        until_at:
+          type: string
+          format: date-time
+        reason:
+          type: string
+      required: [event_id, occurred_at, server_id, user_id, muted_by, until_at, reason]
+    MemberUnbanned:
+      description: 'MemberUnbanned is published when a ban is revoked. It does not make the user a member again: they still need a valid invitation to rejoin.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          description: Usuario cuyo ban se revocó.
+        unbanned_by:
+          type: string
+          description: Usuario con BAN_MEMBERS que revocó el ban.
+      required: [event_id, occurred_at, server_id, user_id, unbanned_by]
+    MemberUnmuted:
+      description: MemberUnmuted is published when a mute is manually revoked or expires.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+        unmuted_by:
+          type: string
+        reason:
+          type: string
+          enum:
+            - manual
+            - expired
+      required: [event_id, occurred_at, server_id, user_id, unmuted_by, reason]
+    ModerationActionRecorded:
+      description: 'ModerationActionRecorded is published by servers every time a moderation action (ban, unban, kick, mute or unmute) is written to its audit log. Admin consumes it to build the investigation dossier of a user without asking servers. Meta.OccurredAt is the moment of the action, the same occurred_at as the audit log entry. An audit entry never changes, so the event is immutable: ActionID is the id of the audit entry and the idempotency key, and a repeated delivery with the same ActionID must be ignored. It carries neither the moderator who acted nor the reason (data minimization): the dossier is about the target user, and who acted is only needed inside servers.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        action_id:
+          type: string
+          format: uuid
+          description: Id de la fila de `moderation_audit_entries` en servers. Sirve para deduplicar.
+        server_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum:
+            - ban
+            - unban
+            - kick
+            - mute
+            - unmute
+        target_user_id:
+          type: string
+          description: Usuario sobre el que se aplicó la acción (ID de discordia-identify).
+      required: [event_id, occurred_at, action_id, server_id, action, target_user_id]
+    WordFilterUpdated:
+      description: 'WordFilterUpdated is published every time a server''s banned words list changes. It carries the whole list, not a diff, so consumers keep the one with the newest occurred_at and a repeated or late event never undoes a newer change. Words must never be nil: an empty list (no filter) has to marshal as [] and not as null.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        words:
+          type: array
+          items:
+            type: string
+          description: Palabras o frases prohibidas, normalizadas (minúsculas, sin espacios de más). Lista vacía = sin filtro.
+      required: [event_id, occurred_at, server_id, words]
+    ChannelOverridesUpdated:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        channel_id:
+          type: string
+          format: uuid
+        overrides:
+          type: array
+          items:
+            type: object
+            properties:
+              role_id:
+                type: string
+              allow:
+                type: array
+                items:
+                  type: string
+              deny:
+                type: array
+                items:
+                  type: string
+            required: [role_id, allow, deny]
+          description: Un elemento por rol que tiene override en el canal. Vacío si no queda ninguno, nunca null.
+      required: [event_id, occurred_at, server_id, channel_id, overrides]
+    MemberRolesUpdated:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          description: ID del usuario en discordia-identify.
+        role_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Todos los roles del miembro, `@everyone` incluido, ordenados, sin repetidos. Nunca null.
+      required: [event_id, occurred_at, server_id, user_id, role_ids]
+    OwnerUpdated:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          description: ID del dueño en discordia-identify.
+      required: [event_id, occurred_at, server_id, owner_id]
+    RoleDeleted:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        role_id:
+          type: string
+          format: uuid
+      required: [event_id, occurred_at, server_id, role_id]
+    RoleUpdated:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        role_id:
+          type: string
+          format: uuid
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Permisos del rol a nivel servidor, ordenados, sin repetidos. Puede ser vacío, nunca null.
+        is_everyone:
+          type: boolean
+          description: true para el rol `@everyone`, que todo miembro tiene y no se puede borrar.
+      required: [event_id, occurred_at, server_id, role_id, permissions, is_everyone]
+    HealthChanged:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        service:
+          type: string
+        previous_status:
+          type: string
+          enum:
+            - unknown
+            - operational
+            - degraded
+        status:
+          type: string
+          enum:
+            - operational
+            - degraded
+        consecutive_failures:
+          type: integer
+          minimum: 0
+        audience_user_ids:
+          type: array
+          items:
+            type: string
+      required: [event_id, occurred_at, service, previous_status, status, consecutive_failures, audience_user_ids]
+    StatusChanged:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        status:
+          type: string
+          enum:
+            - operational
+            - degraded
+            - maintenance
+      required: [event_id, occurred_at, status]
+    UserPresenceChanged:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+        connections:
+          type: string
+          enum:
+            - active
+            - idle
+            - none
+          description: Estado real de las conexiones del usuario, de todas sus instancias y dispositivos.
+        do_not_disturb:
+          type: boolean
+          description: '`true` si el usuario eligió No molestar. Se manda siempre.'
+        version:
+          type: integer
+          format: int64
+          description: Crece con cada cambio del mismo usuario. El consumidor aplica el evento solo si es mayor a la que ya tiene.
+      required: [event_id, occurred_at, user_id, connections, do_not_disturb, version]
+    ReportUpdated:
+      description: 'ReportUpdated is published by servers when a user or message report is created and every time its status changes. Admin consumes it to build the investigation dossier of a user without asking servers. It is a full snapshot of the report, not a diff. There is no version: the consumer keeps the snapshot with the newest occurred_at of each report, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as servers.ServerUpdated). Optional fields are always present and marshal as null when empty (no omitempty): ReportedUserID is null when Kind is KindMessage, ChannelID and MessageID are null when Kind is KindUser, and ResolvedAt is null while the report is pending. It carries neither the reporter nor the moderator who resolved it (data minimization): the dossier is about the reported user, and who reported or resolved is only needed inside servers.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        report_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        kind:
+          type: string
+          enum:
+            - user
+            - message
+          description: Qué se reportó.
+        reported_user_id:
+          type: [string, "null"]
+          format: uuid
+          description: Usuario reportado (ID de discordia-identify). `null` si `kind` es `message`.
+        channel_id:
+          type: [string, "null"]
+          format: uuid
+          description: Canal del mensaje reportado. `null` si `kind` es `user`.
+        message_id:
+          type: [string, "null"]
+          format: uuid
+          description: Mensaje reportado. `null` si `kind` es `user`.
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: Motivo que escribió quien reportó.
+        status:
+          type: string
+          enum:
+            - pending
+            - resolved
+            - dismissed
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación del reporte, ISO 8601 en UTC.
+        resolved_at:
+          type: [string, "null"]
+          format: date-time
+          description: Fecha de cierre del reporte, ISO 8601 en UTC. `null` mientras está `pending`.
+      required:
+        - event_id
+        - occurred_at
+        - report_id
+        - server_id
+        - kind
+        - reported_user_id
+        - channel_id
+        - message_id
+        - reason
+        - status
+        - created_at
+        - resolved_at
+    EmojiCreated:
+      description: 'EmojiCreated is published by servers when a custom emoji is added to a server. Like EmojiDeleted, it carries the whole emoji: an emoji never changes after it is created, so its only transition is being deleted, and that transition wins whatever order the two events arrive in.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        emoji_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          pattern: ^[A-Za-z0-9_]{2,32}$
+        animated:
+          type: boolean
+          description: true si la imagen es un GIF; usarlo requiere Premium.
+        image_url:
+          type: string
+          format: uri
+      required: [event_id, occurred_at, emoji_id, server_id, name, animated, image_url]
+    EmojiDeleted:
+      description: 'EmojiDeleted is published by servers when a custom emoji is deleted. It can no longer be used in new messages or reactions, but the image stays available: consumers keep it so the messages and reactions that already use it still show it.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        emoji_id:
+          type: string
+          format: uuid
+        server_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          pattern: ^[A-Za-z0-9_]{2,32}$
+        animated:
+          type: boolean
+          description: true si la imagen es un GIF; usarlo requiere Premium.
+        image_url:
+          type: string
+          format: uri
+      required: [event_id, occurred_at, emoji_id, server_id, name, animated, image_url]
+    ServerDeleted:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        channel_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+          description: Ids de todos los canales (texto y voz) que tenía el servidor. Puede ser vacío, nunca null.
+      required: [event_id, occurred_at, server_id, channel_ids]
+    ServerUpdated:
+      description: 'ServerUpdated is published by servers when a server is created and every time its name or owner changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. There is no version: the consumer keeps the snapshot with the newest occurred_at of each server, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as the permissions events). Built for admin''s back-office listing, which shows the name, owner and creation date of every server without asking servers.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        owner_id:
+          type: string
+          description: ID del dueño del servidor (emitido por discordia-identify).
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de creación del servidor, ISO 8601 en UTC. No cambia entre fotos.
+      required: [event_id, occurred_at, server_id, name, owner_id, created_at]
+    AccountRegistered:
+      description: 'AccountRegistered is published by identify once, when an account is created. It carries the data of the account itself (as opposed to the public profile of ProfileUpdated) for the one consumer that needs it: admin''s back-office listing, which searches users by email. Email and CreatedAt never change, so there is no version: a repeated delivery is harmless because applying it again leaves the same values. Do not add this event to consumers that only need the public profile -- the email is private data. EmailVerified is true when the account was born verified (OAuth sign-up) and false for an email sign-up, which stays pending until EmailVerified arrives. Events published before this field existed don''t carry it, so they decode as false.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+          description: ID del usuario en discordia-identify.
+        email:
+          type: string
+          format: email
+          description: Email de la cuenta. Dato privado; solo para el backoffice.
+        name:
+          type: string
+          description: Nombre al momento del registro (los cambios posteriores viajan en `users.profile_updated`).
+        created_at:
+          type: string
+          format: date-time
+          description: Fecha de registro de la cuenta, ISO 8601 en UTC.
+        email_verified:
+          type: boolean
+          description: 'Si el email ya estaba verificado al crear la cuenta: `true` en las altas por OAuth, `false` en el registro con email. Los eventos anteriores a la versión 0.5.0 no lo traen: el consumidor lo toma como `false`.'
+      required: [event_id, occurred_at, user_id, email, name, created_at]
+    EmailVerified:
+      description: 'EmailVerified is published by identify once, when the user confirms the email of an account created with email sign-up (OAuth sign-ups never publish it: they are already verified in AccountRegistered). Like AccountRegistered it only exists for admin''s back-office listing, which shows unverified accounts as pending. Verification is never undone, so there is no version: a repeated or out-of-order delivery is harmless, and it may arrive before AccountRegistered.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+          description: ID del usuario en discordia-identify.
+        verified_at:
+          type: string
+          format: date-time
+          description: Momento en que se confirmó el email, ISO 8601 en UTC.
+      required: [event_id, occurred_at, user_id, verified_at]
+    ProfileUpdated:
+      description: 'ProfileUpdated is published by identify when a user is created and every time their public profile or status changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. Version is identify''s profile_version: it grows with every change of the same user, and a consumer applies a snapshot only if its version is higher than the one it already has (duplicates and out-of-order deliveries are then harmless). Only public fields travel: the email never does.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+          description: ID del usuario en discordia-identify.
+        version:
+          type: integer
+          format: int64
+          minimum: 1
+          description: profile_version del usuario en identify. Crece con cada cambio; ordena las fotos del mismo usuario.
+        name:
+          type: string
+        avatar_url:
+          type: string
+          description: URL pública del avatar, o vacío si no tiene.
+        description:
+          type: string
+          description: Vacío si no tiene.
+        status_text:
+          type: string
+          description: Texto del estado personalizado, o vacío si no tiene.
+        status_emoji:
+          type: string
+          description: Emoji del estado personalizado, o vacío si no tiene.
+      required:
+        - event_id
+        - occurred_at
+        - user_id
+        - version
+        - name
+        - avatar_url
+        - description
+        - status_text
+        - status_emoji
+    ParticipantJoined:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        event_type:
+          type: string
+          enum:
+            - voice.participant_joined
+            - voice.participant_left
+        server_id:
+          type: string
+          format: uuid
+        room_id:
+          type: string
+          format: uuid
+        participant_id:
+          type: string
+        name:
+          type: string
+      required: [event_id, occurred_at, event_type, server_id, room_id, participant_id, name]
+    ParticipantLeft:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        event_type:
+          type: string
+          enum:
+            - voice.participant_joined
+            - voice.participant_left
+        server_id:
+          type: string
+          format: uuid
+        room_id:
+          type: string
+          format: uuid
+        participant_id:
+          type: string
+        name:
+          type: string
+      required: [event_id, occurred_at, event_type, server_id, room_id, participant_id, name]
+    PrivateCall:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        event_type:
+          type: string
+          enum:
+            - voice.private_call
+        call_id:
+          type: string
+        conversation_id:
+          type: string
+          format: uuid
+        caller_id:
+          type: string
+        recipient_id:
+          type: string
+        room_name:
+          type: string
+        status:
+          type: string
+          enum:
+            - ringing
+            - active
+            - rejected
+            - missed
+            - ended
+        reason:
+          type: string
+        ended_by:
+          type: string
+      required: [event_id, occurred_at, event_type, call_id, conversation_id, caller_id, recipient_id, status]
+    BroadcastNewMessage:
+      description: NewMessage is sent to every instance of messaging when a message is created, so each one pushes it to the sockets it holds.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^channel:.+
+        event:
+          type: string
+          enum:
+            - new_message
+        payload:
+          type: object
+          properties:
+            id:
+              type: string
+            channel_id:
+              type: string
+            server_id:
+              type: [string, "null"]
+            user_id:
+              type: string
+            content:
+              type: string
+            inserted_at:
+              type: string
+              format: date-time
+            edited:
+              type: boolean
+            edited_at:
+              type: [string, "null"]
+              format: date-time
+            mentions:
+              type: array
+              items:
+                type: string
+            mention_roles:
+              type: array
+              items:
+                type: string
+            mention_everyone:
+              type: boolean
+            attachments:
+              type: array
+              items:
+                type: object
+                additionalProperties: {}
+            client_id:
+              type: string
+          required:
+            - id
+            - channel_id
+            - server_id
+            - user_id
+            - content
+            - inserted_at
+            - edited
+            - edited_at
+            - mentions
+            - mention_roles
+            - mention_everyone
+            - attachments
+      required: [event_id, topic, event, payload]
+    BroadcastMessageUpdated:
+      description: 'MessageUpdated is published when the text of a message in a server channel is edited. It carries the mentions the message has after the edit, so a consumer can add the notification of whoever the edit mentioned and remove the one of whoever it stopped mentioning. OccurredAt is the moment of the edit. Direct messages never publish it: they have no mentions.'
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^channel:.+
+        event:
+          type: string
+          enum:
+            - message_updated
+        payload:
+          type: object
+          properties:
+            id:
+              type: string
+            channel_id:
+              type: string
+            server_id:
+              type: [string, "null"]
+            user_id:
+              type: string
+            content:
+              type: string
+            inserted_at:
+              type: string
+              format: date-time
+            edited:
+              type: boolean
+            edited_at:
+              type: [string, "null"]
+              format: date-time
+            mentions:
+              type: array
+              items:
+                type: string
+            mention_roles:
+              type: array
+              items:
+                type: string
+            mention_everyone:
+              type: boolean
+            attachments:
+              type: array
+              items:
+                type: object
+                additionalProperties: {}
+            client_id:
+              type: string
+          required:
+            - id
+            - channel_id
+            - server_id
+            - user_id
+            - content
+            - inserted_at
+            - edited
+            - edited_at
+            - mentions
+            - mention_roles
+            - mention_everyone
+            - attachments
+      required: [event_id, topic, event, payload]
+    BroadcastMessageDeleted:
+      description: MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^channel:.+
+        event:
+          type: string
+          enum:
+            - message_deleted
+        payload:
+          type: object
+          properties:
+            id:
+              type: string
+            channel_id:
+              type: string
+            server_id:
+              type: [string, "null"]
+            deleted_at:
+              type: string
+              format: date-time
+          required: [id, channel_id, server_id, deleted_at]
+      required: [event_id, topic, event, payload]
+    BroadcastReactionUpdated:
+      description: ReactionUpdated is sent when somebody adds or removes a reaction.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^channel:.+
+        event:
+          type: string
+          enum:
+            - reaction_updated
+        payload:
+          type: object
+          properties:
+            channel_id:
+              type: string
+            message_id:
+              type: string
+            emoji:
+              type: string
+            user_id:
+              type: string
+            action:
+              type: string
+            count:
+              type: integer
+              minimum: 0
+          required: [channel_id, message_id, emoji, user_id, action, count]
+      required: [event_id, topic, event, payload]
+    BroadcastNewDm:
+      description: NewDM is sent to each participant of a direct conversation when a message arrives.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^user:.+
+        event:
+          type: string
+          enum:
+            - new_dm
+        payload:
+          type: object
+          properties:
+            conversation_id:
+              type: string
+            partner_id:
+              type: string
+            message:
+              type: object
+              properties:
+                id:
+                  type: string
+                channel_id:
+                  type: string
+                server_id:
+                  type: [string, "null"]
+                user_id:
+                  type: string
+                content:
+                  type: string
+                inserted_at:
+                  type: string
+                  format: date-time
+                edited:
+                  type: boolean
+                edited_at:
+                  type: [string, "null"]
+                  format: date-time
+                mentions:
+                  type: array
+                  items:
+                    type: string
+                mention_roles:
+                  type: array
+                  items:
+                    type: string
+                mention_everyone:
+                  type: boolean
+                attachments:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: {}
+                client_id:
+                  type: string
+              required:
+                - id
+                - channel_id
+                - server_id
+                - user_id
+                - content
+                - inserted_at
+                - edited
+                - edited_at
+                - mentions
+                - mention_roles
+                - mention_everyone
+                - attachments
+          required: [conversation_id, partner_id, message]
+      required: [event_id, topic, event, payload]
+    BroadcastMention:
+      description: Mention is sent to every user a message mentions, wherever they are.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^user:.+
+        event:
+          type: string
+          enum:
+            - mention
+        payload:
+          type: object
+          properties:
+            server_id:
+              type: [string, "null"]
+            channel_id:
+              type: string
+            message:
+              type: object
+              properties:
+                id:
+                  type: string
+                channel_id:
+                  type: string
+                server_id:
+                  type: [string, "null"]
+                user_id:
+                  type: string
+                content:
+                  type: string
+                inserted_at:
+                  type: string
+                  format: date-time
+                edited:
+                  type: boolean
+                edited_at:
+                  type: [string, "null"]
+                  format: date-time
+                mentions:
+                  type: array
+                  items:
+                    type: string
+                mention_roles:
+                  type: array
+                  items:
+                    type: string
+                mention_everyone:
+                  type: boolean
+                attachments:
+                  type: array
+                  items:
+                    type: object
+                    additionalProperties: {}
+                client_id:
+                  type: string
+              required:
+                - id
+                - channel_id
+                - server_id
+                - user_id
+                - content
+                - inserted_at
+                - edited
+                - edited_at
+                - mentions
+                - mention_roles
+                - mention_everyone
+                - attachments
+          required: [server_id, channel_id, message]
+      required: [event_id, topic, event, payload]
+    BroadcastAccessRevoked:
+      description: AccessRevoked is sent when a user loses access to a server or a channel, so their open sockets leave it.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^(channel|presence):.+
+        event:
+          type: string
+          enum:
+            - access_revoked
+        payload:
+          type: object
+          properties:
+            user_id:
+              type: string
+            reason:
+              type: string
+            server_id:
+              type: string
+            channel_id:
+              type: string
+          required: [user_id, reason]
+      required: [event_id, topic, event, payload]
+    BroadcastServerLeft:
+      description: ServerLeft is sent to a user who stopped being a member, so the client drops the server from its list.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^user:.+
+        event:
+          type: string
+          enum:
+            - server_left
+        payload:
+          type: object
+          properties:
+            server_id:
+              type: string
+          required: [server_id]
+      required: [event_id, topic, event, payload]
+    BroadcastServerSuspended:
+      description: ServerSuspended is sent to every member when staff suspends the server.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^user:.+
+        event:
+          type: string
+          enum:
+            - server_suspended
+        payload:
+          type: object
+          properties:
+            server_id:
+              type: string
+          required: [server_id]
+      required: [event_id, topic, event, payload]
+    BroadcastServerReactivated:
+      description: ServerReactivated is sent to every member when staff lifts the suspension.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^user:.+
+        event:
+          type: string
+          enum:
+            - server_reactivated
+        payload:
+          type: object
+          properties:
+            server_id:
+              type: string
+          required: [server_id]
+      required: [event_id, topic, event, payload]
+    BroadcastDisconnect:
+      description: Disconnect makes every instance close the sockets of a user.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^user_socket:.+
+        event:
+          type: string
+          enum:
+            - disconnect
+        payload:
+          type: object
+          properties: {}
+      required: [event_id, topic, event, payload]
+    BroadcastPresenceUpdated:
+      description: PresenceUpdated is sent to whoever should see the connection status of a user.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^(presence|user):.+
+        event:
+          type: string
+          enum:
+            - presence_updated
+        payload:
+          type: object
+          properties:
+            user_id:
+              type: string
+            status:
+              type: string
+            version:
+              type: integer
+              minimum: 0
+          required: [user_id, status, version]
+      required: [event_id, topic, event, payload]
+    BroadcastOwnStatusUpdated:
+      description: OwnStatusUpdated is sent to a user's own sockets when they change the status they chose.
+      type: object
+      properties:
+        event_id:
+          type: string
+        topic:
+          type: string
+          pattern: ^user:.+
+        event:
+          type: string
+          enum:
+            - own_status_updated
+        payload:
+          type: object
+          properties:
+            status:
+              type: string
+            version:
+              type: integer
+              minimum: 0
+          required: [status, version]
+      required: [event_id, topic, event, payload]

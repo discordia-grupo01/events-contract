@@ -10,13 +10,14 @@ const (
 // MemberJoined is published when a user joins a server.
 type MemberJoined struct {
 	envelope.Meta
-	ServerID string `json:"server_id"`
-	UserID   string `json:"user_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// ID del usuario (emitido por discordia-identify).
+	UserID string `json:"user_id"`
 }
 
 // MemberLeft is published when a user leaves (or is removed from) a server.
 type MemberLeft struct {
 	envelope.Meta
-	ServerID string `json:"server_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
 	UserID   string `json:"user_id"`
 }

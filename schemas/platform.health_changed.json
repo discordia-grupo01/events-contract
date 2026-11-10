@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/platform.health_changed.json",
+  "title": "platform.health_changed",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "service": {
+      "type": "string"
+    },
+    "previous_status": {
+      "type": "string",
+      "enum": [
+        "unknown",
+        "operational",
+        "degraded"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "operational",
+        "degraded"
+      ]
+    },
+    "consecutive_failures": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "audience_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "service",
+    "previous_status",
+    "status",
+    "consecutive_failures",
+    "audience_user_ids"
+  ]
+}

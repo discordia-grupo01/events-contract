@@ -12,23 +12,27 @@ const (
 
 type RoleUpdated struct {
 	envelope.Meta
-	ServerID    string   `json:"server_id"`
-	RoleID      string   `json:"role_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	RoleID   string `json:"role_id" contract:"format=uuid"`
+	// Permisos del rol a nivel servidor, ordenados, sin repetidos. Puede ser vacío, nunca null.
 	Permissions []string `json:"permissions"`
-	IsEveryone  bool     `json:"is_everyone"`
+	// true para el rol `@everyone`, que todo miembro tiene y no se puede borrar.
+	IsEveryone bool `json:"is_everyone"`
 }
 
 type RoleDeleted struct {
 	envelope.Meta
-	ServerID string `json:"server_id"`
-	RoleID   string `json:"role_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	RoleID   string `json:"role_id" contract:"format=uuid"`
 }
 
 type MemberRolesUpdated struct {
 	envelope.Meta
-	ServerID string   `json:"server_id"`
-	UserID   string   `json:"user_id"`
-	RoleIDs  []string `json:"role_ids"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// ID del usuario en discordia-identify.
+	UserID string `json:"user_id"`
+	// Todos los roles del miembro, `@everyone` incluido, ordenados, sin repetidos. Nunca null.
+	RoleIDs []string `json:"role_ids" contract:"itemFormat=uuid"`
 }
 
 type RoleOverride struct {
@@ -39,13 +43,15 @@ type RoleOverride struct {
 
 type ChannelOverridesUpdated struct {
 	envelope.Meta
-	ServerID  string         `json:"server_id"`
-	ChannelID string         `json:"channel_id"`
+	ServerID  string `json:"server_id" contract:"format=uuid"`
+	ChannelID string `json:"channel_id" contract:"format=uuid"`
+	// Un elemento por rol que tiene override en el canal. Vacío si no queda ninguno, nunca null.
 	Overrides []RoleOverride `json:"overrides"`
 }
 
 type OwnerUpdated struct {
 	envelope.Meta
-	ServerID string `json:"server_id"`
-	OwnerID  string `json:"owner_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// ID del dueño en discordia-identify.
+	OwnerID string `json:"owner_id"`
 }

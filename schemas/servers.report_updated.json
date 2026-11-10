@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.report_updated.json",
+  "title": "servers.report_updated",
+  "description": "ReportUpdated is published by servers when a user or message report is created and every time its status changes. Admin consumes it to build the investigation dossier of a user without asking servers. It is a full snapshot of the report, not a diff. There is no version: the consumer keeps the snapshot with the newest occurred_at of each report, so a repeated or out-of-order delivery doesn't overwrite newer data (same rule as servers.ServerUpdated). Optional fields are always present and marshal as null when empty (no omitempty): ReportedUserID is null when Kind is KindMessage, ChannelID and MessageID are null when Kind is KindUser, and ResolvedAt is null while the report is pending. It carries neither the reporter nor the moderator who resolved it (data minimization): the dossier is about the reported user, and who reported or resolved is only needed inside servers.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "report_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "user",
+        "message"
+      ],
+      "description": "Qué se reportó."
+    },
+    "reported_user_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "Usuario reportado (ID de discordia-identify). `null` si `kind` es `message`."
+    },
+    "channel_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "Canal del mensaje reportado. `null` si `kind` es `user`."
+    },
+    "message_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uuid",
+      "description": "Mensaje reportado. `null` si `kind` es `user`."
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "description": "Motivo que escribió quien reportó."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "resolved",
+        "dismissed"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de creación del reporte, ISO 8601 en UTC."
+    },
+    "resolved_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time",
+      "description": "Fecha de cierre del reporte, ISO 8601 en UTC. `null` mientras está `pending`."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "report_id",
+    "server_id",
+    "kind",
+    "reported_user_id",
+    "channel_id",
+    "message_id",
+    "reason",
+    "status",
+    "created_at",
+    "resolved_at"
+  ]
+}

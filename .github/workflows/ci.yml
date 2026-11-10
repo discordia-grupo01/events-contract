@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version: "1.22"
@@ -27,6 +29,23 @@ jobs:
       - run: go build ./...
       - run: go vet ./...
       - run: go test ./... -cover
+      - name: Schemas, AsyncAPI y ejemplos al día con las structs de Go
+        run: go run ./cmd/eventsgen check
+      - name: Que el cambio no rompa a publicadores ni consumidores existentes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch origin "$BASE_REF"
+          go run ./cmd/eventsgen compat "origin/$BASE_REF"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validar el AsyncAPI generado con el parser oficial
+        working-directory: scripts
+        run: |
+          npm install --no-audit --no-fund
+          node validate-asyncapi.mjs ../asyncapi/events.asyncapi.yaml
 
   elixir:
     runs-on: ubuntu-latest
@@ -36,8 +55,9 @@ jobs:
         with:
           otp-version: "26.2"
           elixir-version: "1.16.2"
+      - run: mix deps.get
       - name: Chequeo de formato (mix format)
-        run: mix format --check-formatted "*/events.ex" "admin/*.exs" mix.exs
+        run: mix format --check-formatted "*/events.ex" "admin/*.exs" "validator/*.ex" "validator/*.exs" mix.exs
       - run: mix compile --warnings-as-errors
       - run: mix test
 

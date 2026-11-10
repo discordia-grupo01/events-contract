@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/voice.private_call.json",
+  "title": "voice.private_call",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "voice.private_call"
+      ]
+    },
+    "call_id": {
+      "type": "string"
+    },
+    "conversation_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "caller_id": {
+      "type": "string"
+    },
+    "recipient_id": {
+      "type": "string"
+    },
+    "room_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ringing",
+        "active",
+        "rejected",
+        "missed",
+        "ended"
+      ]
+    },
+    "reason": {
+      "type": "string"
+    },
+    "ended_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "event_type",
+    "call_id",
+    "conversation_id",
+    "caller_id",
+    "recipient_id",
+    "status"
+  ]
+}

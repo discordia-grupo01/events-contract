@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.member_banned.json",
+  "title": "servers.member_banned",
+  "description": "MemberBanned is published when a member is banned from a server. The same transaction also publishes membership.MemberLeft, so consumers that only track membership don't need to know about bans.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Usuario baneado."
+    },
+    "banned_by": {
+      "type": "string",
+      "description": "Usuario (owner, administrador o moderador con BAN_MEMBERS) que ejecutó el ban."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "user_id",
+    "banned_by"
+  ]
+}

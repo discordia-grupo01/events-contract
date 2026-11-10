@@ -26,11 +26,16 @@ const (
 // they decode as false.
 type AccountRegistered struct {
 	envelope.Meta
-	UserID        string    `json:"user_id"`
-	Email         string    `json:"email"`
-	Name          string    `json:"name"`
-	CreatedAt     time.Time `json:"created_at"`
-	EmailVerified bool      `json:"email_verified"`
+	// ID del usuario en discordia-identify.
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// Email de la cuenta. Dato privado; solo para el backoffice.
+	Email string `json:"email" contract:"format=email"`
+	// Nombre al momento del registro (los cambios posteriores viajan en `users.profile_updated`).
+	Name string `json:"name"`
+	// Fecha de registro de la cuenta, ISO 8601 en UTC.
+	CreatedAt time.Time `json:"created_at"`
+	// Si el email ya estaba verificado al crear la cuenta: `true` en las altas por OAuth, `false` en el registro con email. Los eventos anteriores a la versión 0.5.0 no lo traen: el consumidor lo toma como `false`.
+	EmailVerified bool `json:"email_verified" contract:"optional=true"`
 }
 
 // EmailVerified is published by identify once, when the user confirms the
@@ -42,7 +47,9 @@ type AccountRegistered struct {
 // it may arrive before AccountRegistered.
 type EmailVerified struct {
 	envelope.Meta
-	UserID     string    `json:"user_id"`
+	// ID del usuario en discordia-identify.
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// Momento en que se confirmó el email, ISO 8601 en UTC.
 	VerifiedAt time.Time `json:"verified_at"`
 }
 
@@ -55,11 +62,17 @@ type EmailVerified struct {
 // Only public fields travel: the email never does.
 type ProfileUpdated struct {
 	envelope.Meta
-	UserID      string `json:"user_id"`
-	Version     int64  `json:"version"`
-	Name        string `json:"name"`
-	AvatarURL   string `json:"avatar_url"`
+	// ID del usuario en discordia-identify.
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// profile_version del usuario en identify. Crece con cada cambio; ordena las fotos del mismo usuario.
+	Version int64  `json:"version" contract:"format=int64;minimum=1"`
+	Name    string `json:"name"`
+	// URL pública del avatar, o vacío si no tiene.
+	AvatarURL string `json:"avatar_url"`
+	// Vacío si no tiene.
 	Description string `json:"description"`
-	StatusText  string `json:"status_text"`
+	// Texto del estado personalizado, o vacío si no tiene.
+	StatusText string `json:"status_text"`
+	// Emoji del estado personalizado, o vacío si no tiene.
 	StatusEmoji string `json:"status_emoji"`
 }

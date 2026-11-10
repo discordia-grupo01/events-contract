@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.new_dm.json",
+  "title": "broadcast.new_dm",
+  "description": "NewDM is sent to each participant of a direct conversation when a message arrives.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^user:.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "new_dm"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "conversation_id": {
+          "type": "string"
+        },
+        "partner_id": {
+          "type": "string"
+        },
+        "message": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "channel_id": {
+              "type": "string"
+            },
+            "server_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "user_id": {
+              "type": "string"
+            },
+            "content": {
+              "type": "string"
+            },
+            "inserted_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "edited": {
+              "type": "boolean"
+            },
+            "edited_at": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            },
+            "mentions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "mention_roles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "mention_everyone": {
+              "type": "boolean"
+            },
+            "attachments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": {}
+              }
+            },
+            "client_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "channel_id",
+            "server_id",
+            "user_id",
+            "content",
+            "inserted_at",
+            "edited",
+            "edited_at",
+            "mentions",
+            "mention_roles",
+            "mention_everyone",
+            "attachments"
+          ]
+        }
+      },
+      "required": [
+        "conversation_id",
+        "partner_id",
+        "message"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}

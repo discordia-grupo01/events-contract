@@ -1,0 +1,13 @@
+{
+  "event": "reaction_updated",
+  "event_id": "event-id",
+  "payload": {
+    "action": "action",
+    "channel_id": "channel-id",
+    "count": 1,
+    "emoji": "emoji",
+    "message_id": "message-id",
+    "user_id": "user-id"
+  },
+  "topic": "channel:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b"
+}

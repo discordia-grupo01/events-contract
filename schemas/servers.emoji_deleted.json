@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.emoji_deleted.json",
+  "title": "servers.emoji_deleted",
+  "description": "EmojiDeleted is published by servers when a custom emoji is deleted. It can no longer be used in new messages or reactions, but the image stays available: consumers keep it so the messages and reactions that already use it still show it.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "emoji_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_]{2,32}$"
+    },
+    "animated": {
+      "type": "boolean",
+      "description": "true si la imagen es un GIF; usarlo requiere Premium."
+    },
+    "image_url": {
+      "type": "string",
+      "format": "uri"
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "emoji_id",
+    "server_id",
+    "name",
+    "animated",
+    "image_url"
+  ]
+}

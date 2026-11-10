@@ -1,7 +1,8 @@
 defmodule EventsContract.MixProject do
   @moduledoc """
-  Proyecto mínimo, sin dependencias, para compilar y probar los bindings
-  Elixir (`*/events.ex`) que viven al lado de los `events.go`. Go no lo usa.
+  Bindings Elixir (`*/events.ex`) y validador de payloads contra los JSON Schema
+  generados en `schemas/`. Los servicios Elixir lo usan como dependencia de git.
+  Go no lo usa.
   """
 
   use Mix.Project
@@ -12,12 +13,19 @@ defmodule EventsContract.MixProject do
       version: "0.0.0",
       elixir: "~> 1.16",
       elixirc_paths:
-        ~w(admin billing channels membership messages permissions presence servers voice),
-      test_paths: ["admin"],
+        ~w(admin billing channels membership messages permissions presence servers voice validator),
+      test_paths: ["admin", "validator"],
       start_permanent: false,
-      deps: []
+      deps: deps()
     ]
   end
 
   def application, do: [extra_applications: [:crypto]]
+
+  defp deps do
+    [
+      {:ex_json_schema, "~> 0.10"},
+      {:jason, "~> 1.4"}
+    ]
+  end
 end

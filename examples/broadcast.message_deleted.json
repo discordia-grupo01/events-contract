@@ -1,0 +1,11 @@
+{
+  "event": "message_deleted",
+  "event_id": "event-id",
+  "payload": {
+    "channel_id": "channel-id",
+    "deleted_at": "2026-11-10T15:00:00Z",
+    "id": "id",
+    "server_id": "server-id"
+  },
+  "topic": "channel:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b"
+}

@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.channel_access_revoked.json",
+  "title": "servers.channel_access_revoked",
+  "description": "ChannelAccessRevoked is published when members who could see a channel (VIEW_CHANNELS after its per-role overrides) no longer can: an override or a role's permissions changed, a role was assigned, removed or deleted, the ownership was transferred, or the member was kicked, banned or left. There is one event per affected channel, text or voice; UserIDs holds only the members who lost access, never empty. Consumers cut what those users have open in the channel (a messaging socket, a voice room); gaining access is never published.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "channel_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "description": "Usuarios que perdieron el acceso a ese canal. Nunca vacío, sin repetidos."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "channel_id",
+    "user_ids"
+  ]
+}

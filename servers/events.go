@@ -15,8 +15,9 @@ const (
 
 type ServerDeleted struct {
 	envelope.Meta
-	ServerID   string   `json:"server_id"`
-	ChannelIDs []string `json:"channel_ids"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Ids de todos los canales (texto y voz) que tenía el servidor. Puede ser vacío, nunca null.
+	ChannelIDs []string `json:"channel_ids" contract:"itemFormat=uuid"`
 }
 
 // ServerUpdated is published by servers when a server is created and every
@@ -28,9 +29,11 @@ type ServerDeleted struct {
 // name, owner and creation date of every server without asking servers.
 type ServerUpdated struct {
 	envelope.Meta
-	ServerID  string    `json:"server_id"`
-	Name      string    `json:"name"`
-	OwnerID   string    `json:"owner_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	Name     string `json:"name"`
+	// ID del dueño del servidor (emitido por discordia-identify).
+	OwnerID string `json:"owner_id"`
+	// Fecha de creación del servidor, ISO 8601 en UTC. No cambia entre fotos.
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -40,11 +43,12 @@ type ServerUpdated struct {
 // whatever order the two events arrive in.
 type EmojiCreated struct {
 	envelope.Meta
-	EmojiID  string `json:"emoji_id"`
-	ServerID string `json:"server_id"`
-	Name     string `json:"name"`
+	EmojiID  string `json:"emoji_id" contract:"format=uuid"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	Name     string `json:"name" contract:"pattern=^[A-Za-z0-9_]{2,32}$"`
+	// true si la imagen es un GIF; usarlo requiere Premium.
 	Animated bool   `json:"animated"`
-	ImageURL string `json:"image_url"`
+	ImageURL string `json:"image_url" contract:"format=uri"`
 }
 
 // EmojiDeleted is published by servers when a custom emoji is deleted. It can no
@@ -53,9 +57,10 @@ type EmojiCreated struct {
 // it.
 type EmojiDeleted struct {
 	envelope.Meta
-	EmojiID  string `json:"emoji_id"`
-	ServerID string `json:"server_id"`
-	Name     string `json:"name"`
+	EmojiID  string `json:"emoji_id" contract:"format=uuid"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	Name     string `json:"name" contract:"pattern=^[A-Za-z0-9_]{2,32}$"`
+	// true si la imagen es un GIF; usarlo requiere Premium.
 	Animated bool   `json:"animated"`
-	ImageURL string `json:"image_url"`
+	ImageURL string `json:"image_url" contract:"format=uri"`
 }

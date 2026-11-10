@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/admin.user_suspended.json",
+  "title": "admin.user_suspended",
+  "description": "UserSuspended is published by admin when staff suspends an account. Every service that serves users (identify, servers, messaging, voice) reacts by rejecting anything that user does and cutting their open sessions. Version is admin's suspension_version for that user: it grows with every suspension or reactivation, and a consumer applies an event only if its version is higher than the one it already has, so duplicated or out-of-order deliveries are harmless. The reason for the suspension never travels (data minimisation).",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Usuario suspendido o reactivado (ID de discordia-identify)."
+    },
+    "version": {
+      "type": "integer",
+      "format": "int64",
+      "minimum": 1,
+      "description": "suspension_version del usuario en admin. Crece con cada suspensión o reactivación; ordena los eventos del mismo usuario."
+    },
+    "signature": {
+      "type": "string",
+      "description": "HMAC-SHA256 en hexadecimal. Ver la sección \"Firma\" de la descripción del documento."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "user_id",
+    "version",
+    "signature"
+  ]
+}

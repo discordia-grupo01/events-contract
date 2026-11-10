@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.presence_updated.json",
+  "title": "broadcast.presence_updated",
+  "description": "PresenceUpdated is sent to whoever should see the connection status of a user.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "pattern": "^(presence|user):.+"
+    },
+    "event": {
+      "type": "string",
+      "enum": [
+        "presence_updated"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "user_id",
+        "status",
+        "version"
+      ]
+    }
+  },
+  "required": [
+    "event_id",
+    "topic",
+    "event",
+    "payload"
+  ]
+}
