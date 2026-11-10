@@ -7,12 +7,14 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
+	eventscontract "github.com/discordia-grupo01/events-contract"
 	"github.com/discordia-grupo01/events-contract/catalog"
 )
 
@@ -20,18 +22,19 @@ const SchemaIDBase = "https://github.com/discordia-grupo01/events-contract/schem
 
 var spaces = regexp.MustCompile(`\s+`)
 
-func LoadComments(root string) (Comments, error) {
+func LoadComments(_ string) (Comments, error) {
 	c := Comments{Types: map[string]string{}, Fields: map[string]map[string]string{}}
-	files, err := filepath.Glob(filepath.Join(root, "*", "*.go"))
+	files, err := fs.Glob(eventscontract.Source, "*/*.go")
 	if err != nil {
 		return c, err
 	}
 	for _, path := range files {
-		if strings.HasSuffix(path, "_test.go") {
-			continue
+		raw, err := eventscontract.Source.ReadFile(path)
+		if err != nil {
+			return c, err
 		}
 		fset := token.NewFileSet()
-		file, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
+		file, err := parser.ParseFile(fset, path, raw, parser.ParseComments)
 		if err != nil {
 			return c, err
 		}
