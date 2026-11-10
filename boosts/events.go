@@ -47,12 +47,12 @@ const (
 // effect: BoostID identifies the boost on both sides.
 type SagaEvent struct {
 	envelope.Meta
-	BoostID  string `json:"boost_id"`
-	ServerID string `json:"server_id"`
-	UserID   string `json:"user_id"`
+	BoostID  string `json:"boost_id" contract:"format=uuid"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	UserID   string `json:"user_id" contract:"format=uuid"`
 	// Reason is only set on servers.server_boost_rejected.
-	Reason    string `json:"reason,omitempty"`
-	Signature string `json:"signature"`
+	Reason    string `json:"reason,omitempty" contract:"enum=server_not_found|server_suspended|not_a_member|cancelled"`
+	Signature string `json:"signature" contract:"pattern=^[0-9a-f]{64}$"`
 }
 
 // Sign sets Signature using secret, right before publishing with routingKey. It
@@ -98,8 +98,9 @@ func (e SagaEvent) signature(routingKey, secret string) []byte {
 // duplicated or out-of-order deliveries are harmless.
 type ServerBoostUpdated struct {
 	envelope.Meta
-	ServerID   string `json:"server_id"`
-	BoostCount int    `json:"boost_count"`
-	Level      int    `json:"level"`
-	Version    int64  `json:"version"`
+	ServerID   string `json:"server_id" contract:"format=uuid"`
+	BoostCount int    `json:"boost_count" contract:"minimum=0"`
+	// 0 hasta 4 boosts, 1 desde 5, 2 desde 15 y 3 desde 30.
+	Level   int   `json:"level" contract:"minimum=0;maximum=3"`
+	Version int64 `json:"version" contract:"format=int64"`
 }

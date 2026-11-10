@@ -33,8 +33,10 @@ const (
 // track membership don't need to know about bans.
 type MemberBanned struct {
 	envelope.Meta
-	ServerID string `json:"server_id"`
-	UserID   string `json:"user_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Usuario baneado.
+	UserID string `json:"user_id"`
+	// Usuario (owner, administrador o moderador con BAN_MEMBERS) que ejecutó el ban.
 	BannedBy string `json:"banned_by"`
 }
 
@@ -42,8 +44,10 @@ type MemberBanned struct {
 // user a member again: they still need a valid invitation to rejoin.
 type MemberUnbanned struct {
 	envelope.Meta
-	ServerID   string `json:"server_id"`
-	UserID     string `json:"user_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Usuario cuyo ban se revocó.
+	UserID string `json:"user_id"`
+	// Usuario con BAN_MEMBERS que revocó el ban.
 	UnbannedBy string `json:"unbanned_by"`
 }
 
@@ -53,8 +57,10 @@ type MemberUnbanned struct {
 // track membership don't need to know about kicks.
 type MemberKicked struct {
 	envelope.Meta
-	ServerID string `json:"server_id"`
-	UserID   string `json:"user_id"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Usuario expulsado.
+	UserID string `json:"user_id"`
+	// Usuario (owner, administrador o miembro con KICK_MEMBERS) que ejecutó la expulsión.
 	KickedBy string `json:"kicked_by"`
 }
 
@@ -62,7 +68,7 @@ type MemberKicked struct {
 // and publish voice for a limited period. The session remains connected.
 type MemberMuted struct {
 	envelope.Meta
-	ServerID string    `json:"server_id"`
+	ServerID string    `json:"server_id" contract:"format=uuid"`
 	UserID   string    `json:"user_id"`
 	MutedBy  string    `json:"muted_by"`
 	UntilAt  time.Time `json:"until_at"`
@@ -72,10 +78,10 @@ type MemberMuted struct {
 // MemberUnmuted is published when a mute is manually revoked or expires.
 type MemberUnmuted struct {
 	envelope.Meta
-	ServerID  string `json:"server_id"`
+	ServerID  string `json:"server_id" contract:"format=uuid"`
 	UserID    string `json:"user_id"`
 	UnmutedBy string `json:"unmuted_by"`
-	Reason    string `json:"reason"`
+	Reason    string `json:"reason" contract:"enum=manual|expired"`
 }
 
 // WordFilterUpdated is published every time a server's banned words list
@@ -85,8 +91,9 @@ type MemberUnmuted struct {
 // marshal as [] and not as null.
 type WordFilterUpdated struct {
 	envelope.Meta
-	ServerID string   `json:"server_id"`
-	Words    []string `json:"words"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Palabras o frases prohibidas, normalizadas (minúsculas, sin espacios de más). Lista vacía = sin filtro.
+	Words []string `json:"words"`
 }
 
 // ModerationActionRecorded is published by servers every time a moderation
@@ -104,8 +111,10 @@ type WordFilterUpdated struct {
 // needed inside servers.
 type ModerationActionRecorded struct {
 	envelope.Meta
-	ActionID     string `json:"action_id"`
-	ServerID     string `json:"server_id"`
-	Action       string `json:"action"`
+	// Id de la fila de `moderation_audit_entries` en servers. Sirve para deduplicar.
+	ActionID string `json:"action_id" contract:"format=uuid"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	Action   string `json:"action" contract:"enum=ban|unban|kick|mute|unmute"`
+	// Usuario sobre el que se aplicó la acción (ID de discordia-identify).
 	TargetUserID string `json:"target_user_id"`
 }

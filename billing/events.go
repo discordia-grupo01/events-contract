@@ -34,12 +34,18 @@ const RoutingKeyPremiumUpdated = "billing.premium_updated"
 // duplicated or out-of-order deliveries are harmless.
 type PremiumUpdated struct {
 	envelope.Meta
-	UserID       string     `json:"user_id"`
-	Active       bool       `json:"active"`
+	// Usuario (ID de discordia-identify).
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// Si el usuario tiene Premium ahora. Es lo único que el consumidor necesita aplicar.
+	Active bool `json:"active"`
+	// Hasta cuándo está pago, en UTC. `null` si nunca pagó.
 	PremiumUntil *time.Time `json:"premium_until"`
-	Renews       bool       `json:"renews"`
-	Version      int64      `json:"version"`
-	Signature    string     `json:"signature"`
+	// Si Mercado Pago va a volver a cobrar al llegar `premium_until`.
+	Renews bool `json:"renews"`
+	// Crece con cada foto del mismo usuario; ordena los eventos.
+	Version int64 `json:"version" contract:"format=int64;minimum=1"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+	Signature string `json:"signature"`
 }
 
 // Sign sets Signature using secret. billing calls it right before publishing.

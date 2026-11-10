@@ -40,14 +40,21 @@ const (
 // resolved is only needed inside servers.
 type ReportUpdated struct {
 	envelope.Meta
-	ReportID       string     `json:"report_id"`
-	ServerID       string     `json:"server_id"`
-	Kind           string     `json:"kind"`
-	ReportedUserID *string    `json:"reported_user_id"`
-	ChannelID      *string    `json:"channel_id"`
-	MessageID      *string    `json:"message_id"`
-	Reason         string     `json:"reason"`
-	Status         string     `json:"status"`
-	CreatedAt      time.Time  `json:"created_at"`
-	ResolvedAt     *time.Time `json:"resolved_at"`
+	ReportID string `json:"report_id" contract:"format=uuid"`
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Qué se reportó.
+	Kind string `json:"kind" contract:"enum=user|message"`
+	// Usuario reportado (ID de discordia-identify). `null` si `kind` es `message`.
+	ReportedUserID *string `json:"reported_user_id" contract:"format=uuid"`
+	// Canal del mensaje reportado. `null` si `kind` es `user`.
+	ChannelID *string `json:"channel_id" contract:"format=uuid"`
+	// Mensaje reportado. `null` si `kind` es `user`.
+	MessageID *string `json:"message_id" contract:"format=uuid"`
+	// Motivo que escribió quien reportó.
+	Reason string `json:"reason" contract:"minLength=1;maxLength=512"`
+	Status string `json:"status" contract:"enum=pending|resolved|dismissed"`
+	// Fecha de creación del reporte, ISO 8601 en UTC.
+	CreatedAt time.Time `json:"created_at"`
+	// Fecha de cierre del reporte, ISO 8601 en UTC. `null` mientras está `pending`.
+	ResolvedAt *time.Time `json:"resolved_at"`
 }
