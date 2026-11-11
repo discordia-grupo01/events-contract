@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/discordia-grupo01/events-contract/schemas/admin.server_reactivated.json",
   "title": "admin.server_reactivated",
-  "description": "ServerReactivated is sent to every member when staff lifts the suspension.",
+  "description": "ServerReactivated is published by admin when staff lifts a server suspension. Same fields and rules as ServerSuspended.",
   "type": "object",
   "properties": {
     "event_id": {
