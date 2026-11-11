@@ -93,7 +93,7 @@ func AsyncAPIWith(entries []catalog.Entry, c Comments, info Info) ([]byte, error
 
 		chID := camel(e.RoutingKey)
 		ch := NewObj().Set("address", e.RoutingKey).Set("title", e.RoutingKey)
-		if d := c.Types[e.Type().Name()]; d != "" {
+		if d := c.Types[e.Type().String()]; d != "" {
 			ch.Set("description", d)
 		}
 		ch.Set("messages", NewObj().Set(camel(name), NewObj().Set("$ref", "#/components/messages/"+name)))

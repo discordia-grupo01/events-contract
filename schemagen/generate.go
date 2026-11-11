@@ -54,7 +54,7 @@ func LoadComments(_ string) (Comments, error) {
 					doc = gen.Doc
 				}
 				if doc != nil {
-					c.Types[ts.Name.Name] = clean(doc.Text())
+					c.Types[file.Name.Name+"."+ts.Name.Name] = clean(doc.Text())
 				}
 				fields := map[string]string{}
 				for _, f := range st.Fields.List {
@@ -72,7 +72,7 @@ func LoadComments(_ string) (Comments, error) {
 					}
 				}
 				if len(fields) > 0 {
-					c.Fields[ts.Name.Name] = fields
+					c.Fields[file.Name.Name+"."+ts.Name.Name] = fields
 				}
 			}
 		}
@@ -97,7 +97,7 @@ func EventSchema(e catalog.Entry, c Comments) (*Obj, error) {
 		Set("$schema", Draft).
 		Set("$id", SchemaIDBase+FileName(e.RoutingKey)).
 		Set("title", e.RoutingKey)
-	if d := c.Types[e.Type().Name()]; d != "" {
+	if d := c.Types[e.Type().String()]; d != "" {
 		out.Set("description", d)
 	}
 	applyOverrides(body, e)
