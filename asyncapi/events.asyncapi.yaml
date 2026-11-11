@@ -74,6 +74,15 @@ channels:
         $ref: '#/components/messages/UserSuspended'
     bindings:
       $ref: '#/components/channelBindings/discordiaEvents'
+  billingAccountChanged:
+    address: billing.account_changed
+    title: billing.account_changed
+    description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+    messages:
+      accountChanged:
+        $ref: '#/components/messages/AccountChanged'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
   adminBackofficeChanged:
     address: admin.backoffice_changed
     title: admin.backoffice_changed
@@ -748,6 +757,22 @@ operations:
     title: discordia-voice-sfu consume admin.user_suspended
     channel:
       $ref: '#/channels/adminUserSuspended'
+    bindings:
+      amqp:
+        ack: true
+  billingPublishesAccountChanged:
+    action: send
+    title: discordia-billing publica billing.account_changed
+    channel:
+      $ref: '#/channels/billingAccountChanged'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesAccountChanged:
+    action: receive
+    title: discordia-notifications consume billing.account_changed
+    channel:
+      $ref: '#/channels/billingAccountChanged'
     bindings:
       amqp:
         ack: true
@@ -1868,6 +1893,18 @@ components:
             user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
             version: 2
       description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    AccountChanged:
+      name: AccountChanged
+      title: billing.account_changed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AccountChanged'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            resource: points
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
     BackofficeChanged:
       name: BackofficeChanged
       title: admin.backoffice_changed
@@ -2931,6 +2968,29 @@ components:
           type: string
           description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
       required: [event_id, occurred_at, user_id, version, signature]
+    AccountChanged:
+      description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        user_id:
+          type: string
+          format: uuid
+        resource:
+          type: string
+          enum:
+            - points
+            - boosts
+            - purchases
+          description: 'Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff, un expediente o las métricas.'
+      required: [event_id, occurred_at, user_id, resource]
     BackofficeChanged:
       description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
       type: object
@@ -2951,7 +3011,8 @@ components:
             - reports
             - staff
             - dossier
-          description: 'Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff o el expediente.'
+            - metrics
+          description: 'Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff, un expediente o las métricas.'
         audience_user_ids:
           type: array
           items:

@@ -10,8 +10,8 @@ const RoutingKeyChanged = "admin.backoffice_changed"
 // the worst a forged one can do is make a staff screen ask again for what it already shows.
 type Changed struct {
 	envelope.Meta
-	// Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff o el expediente.
-	Resource string `json:"resource" contract:"enum=users|servers|reports|staff|dossier"`
+	// Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff, un expediente o las métricas.
+	Resource string `json:"resource" contract:"enum=users|servers|reports|staff|dossier|metrics"`
 	// Miembros del staff a los que hay que avisar.
 	AudienceUserIDs []string `json:"audience_user_ids"`
 }

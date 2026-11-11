@@ -3,6 +3,7 @@ package catalog
 import (
 	"reflect"
 
+	"github.com/discordia-grupo01/events-contract/account"
 	"github.com/discordia-grupo01/events-contract/admin"
 	"github.com/discordia-grupo01/events-contract/backoffice"
 	"github.com/discordia-grupo01/events-contract/billing"
@@ -87,6 +88,7 @@ func All() []Entry {
 		signed(event(admin.RoutingKeyStaffMemberRemoved, admin.StaffMemberRemoved{}, "admin")),
 		signed(event(admin.RoutingKeyUserReactivated, admin.UserReactivated{}, "admin", "identify-service", "messaging", "servers", "voice-sfu")),
 		signed(event(admin.RoutingKeyUserSuspended, admin.UserSuspended{}, "admin", "identify-service", "messaging", "servers", "voice-sfu")),
+		event(account.RoutingKeyChanged, account.Changed{}, "billing", "notifications"),
 		event(backoffice.RoutingKeyChanged, backoffice.Changed{}, "admin", "notifications"),
 		signed(event(billing.RoutingKeyPremiumUpdated, billing.PremiumUpdated{}, "billing", "identify-service", "messaging")),
 		signed(without(event(boosts.RoutingKeyRequested, boosts.SagaEvent{}, "billing", "servers"), "reason")),

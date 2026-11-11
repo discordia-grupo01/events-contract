@@ -70,6 +70,9 @@ reports/
   events.go       -- ReportUpdated (Go, publicado por servers, consumido por admin
                      para el expediente de investigación)
   events_test.go
+account/
+  events.go       -- Changed (Go, publicado por billing cuando cambia el saldo de puntos, los boosts o las compras de
+                     un usuario; sin datos, solo qué volver a pedir; consumido por notifications)
 backoffice/
   events.go       -- Changed (Go, publicado por admin cuando cambia algo que el backoffice muestra al staff:
                      usuarios, servidores, reportes, el equipo de staff o un expediente; lleva a quién avisar,

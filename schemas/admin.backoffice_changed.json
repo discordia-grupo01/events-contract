@@ -22,9 +22,10 @@
         "servers",
         "reports",
         "staff",
-        "dossier"
+        "dossier",
+        "metrics"
       ],
-      "description": "Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff o el expediente."
+      "description": "Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff, un expediente o las métricas."
     },
     "audience_user_ids": {
       "type": "array",
