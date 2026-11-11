@@ -279,6 +279,15 @@ channels:
         $ref: '#/components/messages/WordFilterUpdated'
     bindings:
       $ref: '#/components/channelBindings/discordiaEvents'
+  serversOwnershipTransferUpdated:
+    address: servers.ownership_transfer_updated
+    title: servers.ownership_transfer_updated
+    description: 'TransferUpdated is published by servers every time an ownership transfer changes state: when the owner offers it (pending), when the recipient accepts or rejects it, when the owner cancels it and when it expires after 24 hours. It is a full snapshot, so a consumer keeps the one with the newest occurred_at of each transfer and a repeated or out-of-order delivery doesn''t overwrite newer data. OccurredAt is the moment of the change: the creation time for pending and the resolution time for the rest. The notification goes to the recipient while the transfer is pending and to the previous owner when the recipient answers or the offer expires.'
+    messages:
+      ownershipTransferUpdated:
+        $ref: '#/components/messages/OwnershipTransferUpdated'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
   serversChannelOverridesUpdated:
     address: servers.channel_overrides_updated
     title: servers.channel_overrides_updated
@@ -1108,6 +1117,22 @@ operations:
     bindings:
       amqp:
         deliveryMode: 2
+  serversPublishesOwnershipTransferUpdated:
+    action: send
+    title: discordia-servers publica servers.ownership_transfer_updated
+    channel:
+      $ref: '#/channels/serversOwnershipTransferUpdated'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesOwnershipTransferUpdated:
+    action: receive
+    title: discordia-notifications consume servers.ownership_transfer_updated
+    channel:
+      $ref: '#/channels/serversOwnershipTransferUpdated'
+    bindings:
+      amqp:
+        ack: true
   serversPublishesChannelOverridesUpdated:
     action: send
     title: discordia-servers publica servers.channel_overrides_updated
@@ -2124,6 +2149,23 @@ components:
             server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
             words:
               - words
+    OwnershipTransferUpdated:
+      name: OwnershipTransferUpdated
+      title: servers.ownership_transfer_updated
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OwnershipTransferUpdated'
+      examples:
+        - payload:
+            created_at: "2026-11-10T15:00:00Z"
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            from_user_id: from-user-id
+            occurred_at: "2026-11-10T15:00:00Z"
+            resolved_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            status: pending
+            to_user_id: to-user-id
+            transfer_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
     ChannelOverridesUpdated:
       name: ChannelOverridesUpdated
       title: servers.channel_overrides_updated
@@ -3415,6 +3457,50 @@ components:
             type: string
           description: Palabras o frases prohibidas, normalizadas (minúsculas, sin espacios de más). Lista vacía = sin filtro.
       required: [event_id, occurred_at, server_id, words]
+    OwnershipTransferUpdated:
+      description: 'TransferUpdated is published by servers every time an ownership transfer changes state: when the owner offers it (pending), when the recipient accepts or rejects it, when the owner cancels it and when it expires after 24 hours. It is a full snapshot, so a consumer keeps the one with the newest occurred_at of each transfer and a repeated or out-of-order delivery doesn''t overwrite newer data. OccurredAt is the moment of the change: the creation time for pending and the resolution time for the rest. The notification goes to the recipient while the transfer is pending and to the previous owner when the recipient answers or the offer expires.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        transfer_id:
+          type: string
+          format: uuid
+          description: Identificador de la transferencia.
+        server_id:
+          type: string
+          format: uuid
+          description: Servidor cuya propiedad se ofrece.
+        from_user_id:
+          type: string
+          description: Dueño que hace el ofrecimiento.
+        to_user_id:
+          type: string
+          description: Miembro que recibe el ofrecimiento.
+        status:
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+            - cancelled
+            - expired
+          description: Estado de la transferencia después del cambio. `expired` es un ofrecimiento sin respuesta a las 24 horas.
+        created_at:
+          type: string
+          format: date-time
+          description: Momento en que se hizo el ofrecimiento.
+        resolved_at:
+          type: string
+          format: date-time
+          description: Momento en que se resolvió; no viaja mientras está pendiente.
+      required: [event_id, occurred_at, transfer_id, server_id, from_user_id, to_user_id, status, created_at]
     ChannelOverridesUpdated:
       type: object
       properties:
