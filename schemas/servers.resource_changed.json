@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.resource_changed.json",
+  "title": "servers.resource_changed",
+  "description": "ResourceChanged is published by servers when something a client keeps on screen changed and no other event says so: the server's name, icon, banner or vanity link, its channels and categories (rename, move, reorder, create), or its roles (reorder, default role). It carries no data, only what to ask for again, so a consumer never needs the new state and a repeated or out-of-order delivery is harmless.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Servidor al que pertenece lo que cambió."
+    },
+    "resource": {
+      "type": "string",
+      "enum": [
+        "server",
+        "channels",
+        "roles"
+      ],
+      "description": "Qué volver a pedir: los datos del servidor, sus canales y categorías, o sus roles."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "resource"
+  ]
+}

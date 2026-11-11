@@ -4,6 +4,7 @@ import (
 	"reflect"
 
 	"github.com/discordia-grupo01/events-contract/admin"
+	"github.com/discordia-grupo01/events-contract/backoffice"
 	"github.com/discordia-grupo01/events-contract/billing"
 	"github.com/discordia-grupo01/events-contract/boosts"
 	"github.com/discordia-grupo01/events-contract/broadcast"
@@ -86,6 +87,7 @@ func All() []Entry {
 		signed(event(admin.RoutingKeyStaffMemberRemoved, admin.StaffMemberRemoved{}, "admin")),
 		signed(event(admin.RoutingKeyUserReactivated, admin.UserReactivated{}, "admin", "identify-service", "messaging", "servers", "voice-sfu")),
 		signed(event(admin.RoutingKeyUserSuspended, admin.UserSuspended{}, "admin", "identify-service", "messaging", "servers", "voice-sfu")),
+		event(backoffice.RoutingKeyChanged, backoffice.Changed{}, "admin", "notifications"),
 		signed(event(billing.RoutingKeyPremiumUpdated, billing.PremiumUpdated{}, "billing", "identify-service", "messaging")),
 		signed(without(event(boosts.RoutingKeyRequested, boosts.SagaEvent{}, "billing", "servers"), "reason")),
 		signed(without(event(boosts.RoutingKeyCancelled, boosts.SagaEvent{}, "billing", "servers"), "reason")),
@@ -121,6 +123,7 @@ func All() []Entry {
 		event(reports.RoutingKeyReportUpdated, reports.ReportUpdated{}, "servers", "admin"),
 		event(servers.RoutingKeyEmojiCreated, servers.EmojiCreated{}, "servers", "messaging"),
 		event(servers.RoutingKeyEmojiDeleted, servers.EmojiDeleted{}, "servers", "messaging"),
+		event(servers.RoutingKeyResourceChanged, servers.ResourceChanged{}, "servers", "notifications"),
 		event(servers.RoutingKeyServerDeleted, servers.ServerDeleted{}, "servers", "admin", "messaging", "notifications", "voice-sfu"),
 		event(servers.RoutingKeyServerUpdated, servers.ServerUpdated{}, "servers", "admin"),
 		event(users.RoutingKeyAccountRegistered, users.AccountRegistered{}, "identify-service", "admin"),
