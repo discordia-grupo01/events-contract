@@ -74,6 +74,15 @@ channels:
         $ref: '#/components/messages/UserSuspended'
     bindings:
       $ref: '#/components/channelBindings/discordiaEvents'
+  adminBackofficeChanged:
+    address: admin.backoffice_changed
+    title: admin.backoffice_changed
+    description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+    messages:
+      backofficeChanged:
+        $ref: '#/components/messages/BackofficeChanged'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
   billingPremiumUpdated:
     address: billing.premium_updated
     title: billing.premium_updated
@@ -377,6 +386,15 @@ channels:
     messages:
       emojiDeleted:
         $ref: '#/components/messages/EmojiDeleted'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  serversResourceChanged:
+    address: servers.resource_changed
+    title: servers.resource_changed
+    description: 'ResourceChanged is published by servers when something a client keeps on screen changed and no other event says so: the server''s name, icon, banner or vanity link, its channels and categories (rename, move, reorder, create), or its roles (reorder, default role). It carries no data, only what to ask for again, so a consumer never needs the new state and a repeated or out-of-order delivery is harmless.'
+    messages:
+      resourceChanged:
+        $ref: '#/components/messages/ResourceChanged'
     bindings:
       $ref: '#/components/channelBindings/discordiaEvents'
   serversServerDeleted:
@@ -730,6 +748,22 @@ operations:
     title: discordia-voice-sfu consume admin.user_suspended
     channel:
       $ref: '#/channels/adminUserSuspended'
+    bindings:
+      amqp:
+        ack: true
+  adminPublishesBackofficeChanged:
+    action: send
+    title: discordia-admin publica admin.backoffice_changed
+    channel:
+      $ref: '#/channels/adminBackofficeChanged'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesBackofficeChanged:
+    action: receive
+    title: discordia-notifications consume admin.backoffice_changed
+    channel:
+      $ref: '#/channels/adminBackofficeChanged'
     bindings:
       amqp:
         ack: true
@@ -1349,6 +1383,22 @@ operations:
     bindings:
       amqp:
         ack: true
+  serversPublishesResourceChanged:
+    action: send
+    title: discordia-servers publica servers.resource_changed
+    channel:
+      $ref: '#/channels/serversResourceChanged'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesResourceChanged:
+    action: receive
+    title: discordia-notifications consume servers.resource_changed
+    channel:
+      $ref: '#/channels/serversResourceChanged'
+    bindings:
+      amqp:
+        ack: true
   serversPublishesServerDeleted:
     action: send
     title: discordia-servers publica servers.server_deleted
@@ -1818,6 +1868,19 @@ components:
             user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
             version: 2
       description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    BackofficeChanged:
+      name: BackofficeChanged
+      title: admin.backoffice_changed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BackofficeChanged'
+      examples:
+        - payload:
+            audience_user_ids:
+              - audience-user-ids
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            resource: users
     PremiumUpdated:
       name: PremiumUpdated
       title: billing.premium_updated
@@ -2327,6 +2390,18 @@ components:
             image_url: https://cdn.example.com/imagen.png
             name: custom_emoji
             occurred_at: "2026-11-10T15:00:00Z"
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    ResourceChanged:
+      name: ResourceChanged
+      title: servers.resource_changed
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ResourceChanged'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            resource: server
             server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
     ServerDeleted:
       name: ServerDeleted
@@ -2856,6 +2931,33 @@ components:
           type: string
           description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
       required: [event_id, occurred_at, user_id, version, signature]
+    BackofficeChanged:
+      description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        resource:
+          type: string
+          enum:
+            - users
+            - servers
+            - reports
+            - staff
+            - dossier
+          description: 'Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff o el expediente.'
+        audience_user_ids:
+          type: array
+          items:
+            type: string
+          description: Miembros del staff a los que hay que avisar.
+      required: [event_id, occurred_at, resource, audience_user_ids]
     PremiumUpdated:
       description: 'PremiumUpdated is a full snapshot of a user''s Premium, not a diff. billing publishes it when Premium starts, renews, stops renewing, is revoked (refund or chargeback) or expires. Active is what consumers apply. PremiumUntil (nil if the user never paid) and Renews are for display: when PremiumUntil passes, billing publishes another snapshot with Active false, so consumers never need a clock. Version grows with every snapshot of the same user; a consumer applies an event only if its version is higher than the one it already has, so duplicated or out-of-order deliveries are harmless.'
       type: object
@@ -3825,6 +3927,30 @@ components:
           type: string
           format: uri
       required: [event_id, occurred_at, emoji_id, server_id, name, animated, image_url]
+    ResourceChanged:
+      description: 'ResourceChanged is published by servers when something a client keeps on screen changed and no other event says so: the server''s name, icon, banner or vanity link, its channels and categories (rename, move, reorder, create), or its roles (reorder, default role). It carries no data, only what to ask for again, so a consumer never needs the new state and a repeated or out-of-order delivery is harmless.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+          description: Servidor al que pertenece lo que cambió.
+        resource:
+          type: string
+          enum:
+            - server
+            - channels
+            - roles
+          description: 'Qué volver a pedir: los datos del servidor, sus canales y categorías, o sus roles.'
+      required: [event_id, occurred_at, server_id, resource]
     ServerDeleted:
       type: object
       properties:

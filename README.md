@@ -70,6 +70,10 @@ reports/
   events.go       -- ReportUpdated (Go, publicado por servers, consumido por admin
                      para el expediente de investigación)
   events_test.go
+backoffice/
+  events.go       -- Changed (Go, publicado por admin cuando cambia algo que el backoffice muestra al staff:
+                     usuarios, servidores, reportes, el equipo de staff o un expediente; lleva a quién avisar,
+                     sin datos; consumido por notifications para empujarlo al backoffice abierto)
 ownership/
   events.go       -- TransferUpdated (Go, publicado por servers en cada cambio de estado de una
                      transferencia de propiedad: pendiente, aceptada, rechazada, cancelada o vencida;
@@ -77,6 +81,8 @@ ownership/
 servers/
   events.go       -- ServerDeleted, ServerUpdated, EmojiCreated, EmojiDeleted
                      (Go, publicados por servers)
+                     ResourceChanged (Go, publicado por servers cuando cambia algo que ningún otro evento
+                     avisa: datos del servidor, canales y categorías, roles; sin datos, solo qué volver a pedir)
   events_test.go
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 admin/

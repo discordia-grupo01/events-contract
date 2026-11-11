@@ -11,6 +11,8 @@ const (
 	RoutingKeyServerUpdated = "servers.server_updated"
 	RoutingKeyEmojiCreated  = "servers.emoji_created"
 	RoutingKeyEmojiDeleted  = "servers.emoji_deleted"
+
+	RoutingKeyResourceChanged = "servers.resource_changed"
 )
 
 type ServerDeleted struct {
@@ -63,4 +65,16 @@ type EmojiDeleted struct {
 	// true si la imagen es un GIF; usarlo requiere Premium.
 	Animated bool   `json:"animated"`
 	ImageURL string `json:"image_url" contract:"format=uri"`
+}
+
+// ResourceChanged is published by servers when something a client keeps on screen changed and no other event says so:
+// the server's name, icon, banner or vanity link, its channels and categories (rename, move, reorder, create), or its
+// roles (reorder, default role). It carries no data, only what to ask for again, so a consumer never needs the new
+// state and a repeated or out-of-order delivery is harmless.
+type ResourceChanged struct {
+	envelope.Meta
+	// Servidor al que pertenece lo que cambió.
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Qué volver a pedir: los datos del servidor, sus canales y categorías, o sus roles.
+	Resource string `json:"resource" contract:"enum=server|channels|roles"`
 }
