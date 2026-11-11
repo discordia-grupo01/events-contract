@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/servers.ownership_transfer_updated.json",
+  "title": "servers.ownership_transfer_updated",
+  "description": "TransferUpdated is published by servers every time an ownership transfer changes state: when the owner offers it (pending), when the recipient accepts or rejects it, when the owner cancels it and when it expires after 24 hours. It is a full snapshot, so a consumer keeps the one with the newest occurred_at of each transfer and a repeated or out-of-order delivery doesn't overwrite newer data. OccurredAt is the moment of the change: the creation time for pending and the resolution time for the rest. The notification goes to the recipient while the transfer is pending and to the previous owner when the recipient answers or the offer expires.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "transfer_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador de la transferencia."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Servidor cuya propiedad se ofrece."
+    },
+    "from_user_id": {
+      "type": "string",
+      "description": "Dueño que hace el ofrecimiento."
+    },
+    "to_user_id": {
+      "type": "string",
+      "description": "Miembro que recibe el ofrecimiento."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "cancelled",
+        "expired"
+      ],
+      "description": "Estado de la transferencia después del cambio. `expired` es un ofrecimiento sin respuesta a las 24 horas."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento en que se hizo el ofrecimiento."
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento en que se resolvió; no viaja mientras está pendiente."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "transfer_id",
+    "server_id",
+    "from_user_id",
+    "to_user_id",
+    "status",
+    "created_at"
+  ]
+}
