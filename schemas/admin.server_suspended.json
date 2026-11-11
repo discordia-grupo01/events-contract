@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/discordia-grupo01/events-contract/schemas/admin.server_suspended.json",
   "title": "admin.server_suspended",
-  "description": "ServerSuspended is sent to every member when staff suspends the server.",
+  "description": "ServerSuspended is published by admin when staff suspends a server. The server keeps its content, but nobody can use it until it is reactivated: servers rejects every action on it except leaving, messaging rejects reads and writes in its channels and closes their open sockets, and voice takes whoever is connected out of the room. Version is admin's moderation_version for that server: it grows with every suspension, reactivation or deletion request, and a consumer applies an event only if its version is higher than the one it already has. The reason never travels (data minimisation).",
   "type": "object",
   "properties": {
     "event_id": {

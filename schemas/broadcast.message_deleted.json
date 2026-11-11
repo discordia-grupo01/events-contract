@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/discordia-grupo01/events-contract/schemas/broadcast.message_deleted.json",
   "title": "broadcast.message_deleted",
-  "description": "MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.",
+  "description": "MessageDeleted is sent when a message is deleted. It carries no content.",
   "type": "object",
   "properties": {
     "event_id": {

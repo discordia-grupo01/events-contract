@@ -25,7 +25,7 @@ channels:
   adminServerReactivated:
     address: admin.server_reactivated
     title: admin.server_reactivated
-    description: ServerReactivated is sent to every member when staff lifts the suspension.
+    description: ServerReactivated is published by admin when staff lifts a server suspension. Same fields and rules as ServerSuspended.
     messages:
       serverReactivated:
         $ref: '#/components/messages/ServerReactivated'
@@ -34,7 +34,7 @@ channels:
   adminServerSuspended:
     address: admin.server_suspended
     title: admin.server_suspended
-    description: ServerSuspended is sent to every member when staff suspends the server.
+    description: 'ServerSuspended is published by admin when staff suspends a server. The server keeps its content, but nobody can use it until it is reactivated: servers rejects every action on it except leaving, messaging rejects reads and writes in its channels and closes their open sockets, and voice takes whoever is connected out of the room. Version is admin''s moderation_version for that server: it grows with every suspension, reactivation or deletion request, and a consumer applies an event only if its version is higher than the one it already has. The reason never travels (data minimisation).'
     messages:
       serverSuspended:
         $ref: '#/components/messages/ServerSuspended'
@@ -77,7 +77,7 @@ channels:
   billingAccountChanged:
     address: billing.account_changed
     title: billing.account_changed
-    description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+    description: 'Changed is published by billing every time something of a user''s account that the clients show changes: the points balance and its history (a purchase confirmed, points spent or given back by a boost), the boosts the user holds, or the purchases. It carries no data, only what to ask for again, so a repeated or out-of-order delivery is harmless. Premium has its own signed snapshot, billing.premium_updated. It is not signed: the worst a forged one can do is make a screen ask again for what it already shows.'
     messages:
       accountChanged:
         $ref: '#/components/messages/AccountChanged'
@@ -486,7 +486,7 @@ channels:
   broadcastMessageUpdated:
     address: broadcast.message_updated
     title: broadcast.message_updated
-    description: 'MessageUpdated is published when the text of a message in a server channel is edited. It carries the mentions the message has after the edit, so a consumer can add the notification of whoever the edit mentioned and remove the one of whoever it stopped mentioning. OccurredAt is the moment of the edit. Direct messages never publish it: they have no mentions.'
+    description: MessageUpdated is sent when the text of a message is edited.
     messages:
       broadcastMessageUpdated:
         $ref: '#/components/messages/BroadcastMessageUpdated'
@@ -495,7 +495,7 @@ channels:
   broadcastMessageDeleted:
     address: broadcast.message_deleted
     title: broadcast.message_deleted
-    description: MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.
+    description: MessageDeleted is sent when a message is deleted. It carries no content.
     messages:
       broadcastMessageDeleted:
         $ref: '#/components/messages/BroadcastMessageDeleted'
@@ -2835,7 +2835,7 @@ components:
           description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
       required: [event_id, occurred_at, server_id, version, signature]
     ServerReactivated:
-      description: ServerReactivated is sent to every member when staff lifts the suspension.
+      description: ServerReactivated is published by admin when staff lifts a server suspension. Same fields and rules as ServerSuspended.
       type: object
       properties:
         event_id:
@@ -2860,7 +2860,7 @@ components:
           description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
       required: [event_id, occurred_at, server_id, version, signature]
     ServerSuspended:
-      description: ServerSuspended is sent to every member when staff suspends the server.
+      description: 'ServerSuspended is published by admin when staff suspends a server. The server keeps its content, but nobody can use it until it is reactivated: servers rejects every action on it except leaving, messaging rejects reads and writes in its channels and closes their open sockets, and voice takes whoever is connected out of the room. Version is admin''s moderation_version for that server: it grows with every suspension, reactivation or deletion request, and a consumer applies an event only if its version is higher than the one it already has. The reason never travels (data minimisation).'
       type: object
       properties:
         event_id:
@@ -2969,7 +2969,7 @@ components:
           description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
       required: [event_id, occurred_at, user_id, version, signature]
     AccountChanged:
-      description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+      description: 'Changed is published by billing every time something of a user''s account that the clients show changes: the points balance and its history (a purchase confirmed, points spent or given back by a boost), the boosts the user holds, or the purchases. It carries no data, only what to ask for again, so a repeated or out-of-order delivery is harmless. Premium has its own signed snapshot, billing.premium_updated. It is not signed: the worst a forged one can do is make a screen ask again for what it already shows.'
       type: object
       properties:
         event_id:
@@ -2983,13 +2983,14 @@ components:
         user_id:
           type: string
           format: uuid
+          description: Usuario al que se le avisa (ID de discordia-identify).
         resource:
           type: string
           enum:
             - points
             - boosts
             - purchases
-          description: 'Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff, un expediente o las métricas.'
+          description: 'Qué volver a pedir: el saldo de puntos, los boosts del usuario o sus compras.'
       required: [event_id, occurred_at, user_id, resource]
     BackofficeChanged:
       description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
@@ -4314,7 +4315,7 @@ components:
             - attachments
       required: [event_id, topic, event, payload]
     BroadcastMessageUpdated:
-      description: 'MessageUpdated is published when the text of a message in a server channel is edited. It carries the mentions the message has after the edit, so a consumer can add the notification of whoever the edit mentioned and remove the one of whoever it stopped mentioning. OccurredAt is the moment of the edit. Direct messages never publish it: they have no mentions.'
+      description: MessageUpdated is sent when the text of a message is edited.
       type: object
       properties:
         event_id:
@@ -4379,7 +4380,7 @@ components:
             - attachments
       required: [event_id, topic, event, payload]
     BroadcastMessageDeleted:
-      description: MessageDeleted is published when a message is deleted, in a server channel or in a direct conversation (ServerID is empty then and ChannelID is the conversation). OccurredAt is the moment of the deletion. A consumer drops whatever it kept about MessageID.
+      description: MessageDeleted is sent when a message is deleted. It carries no content.
       type: object
       properties:
         event_id:

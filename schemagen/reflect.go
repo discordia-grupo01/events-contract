@@ -67,7 +67,7 @@ func collect(t reflect.Type, comments Comments, props *Obj, required *[]string) 
 		if err != nil {
 			return fmt.Errorf("%s.%s: %w", t.Name(), f.Name, err)
 		}
-		if desc := comments.Fields[t.Name()][f.Name]; desc != "" {
+		if desc := comments.Fields[t.String()][f.Name]; desc != "" {
 			s.Set("description", desc)
 		}
 		props.Set(name, s)
