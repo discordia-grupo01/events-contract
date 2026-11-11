@@ -12,6 +12,7 @@ import (
 	"github.com/discordia-grupo01/events-contract/membership"
 	"github.com/discordia-grupo01/events-contract/messages"
 	"github.com/discordia-grupo01/events-contract/moderation"
+	"github.com/discordia-grupo01/events-contract/ownership"
 	"github.com/discordia-grupo01/events-contract/permissions"
 	"github.com/discordia-grupo01/events-contract/platform"
 	"github.com/discordia-grupo01/events-contract/presence"
@@ -108,6 +109,7 @@ func All() []Entry {
 		event(moderation.RoutingKeyMemberUnmuted, moderation.MemberUnmuted{}, "servers"),
 		event(moderation.RoutingKeyModerationActionRecorded, moderation.ModerationActionRecorded{}, "servers"),
 		event(moderation.RoutingKeyWordFilterUpdated, moderation.WordFilterUpdated{}, "servers"),
+		event(ownership.RoutingKeyTransferUpdated, ownership.TransferUpdated{}, "servers", "notifications"),
 		event(permissions.RoutingKeyChannelOverridesUpdated, permissions.ChannelOverridesUpdated{}, "servers", "messaging", "notifications"),
 		event(permissions.RoutingKeyMemberRolesUpdated, permissions.MemberRolesUpdated{}, "servers", "messaging", "notifications"),
 		event(permissions.RoutingKeyOwnerUpdated, permissions.OwnerUpdated{}, "servers", "messaging", "notifications"),

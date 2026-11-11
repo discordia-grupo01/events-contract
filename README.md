@@ -70,6 +70,10 @@ reports/
   events.go       -- ReportUpdated (Go, publicado por servers, consumido por admin
                      para el expediente de investigación)
   events_test.go
+ownership/
+  events.go       -- TransferUpdated (Go, publicado por servers en cada cambio de estado de una
+                     transferencia de propiedad: pendiente, aceptada, rechazada, cancelada o vencida;
+                     consumido por notifications para avisar al receptor y al dueño anterior)
 servers/
   events.go       -- ServerDeleted, ServerUpdated, EmojiCreated, EmojiDeleted
                      (Go, publicados por servers)
