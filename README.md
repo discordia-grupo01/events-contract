@@ -42,6 +42,10 @@ structs de Go  ──go run ./cmd/eventsgen gen──▶  schemas/<routing key>.
 - **Canal interno de `messaging`:** los 13 eventos que viajan entre sus instancias por el
   exchange `messaging.broadcast` (`fanout`) están en `broadcast/` y en el catálogo como
   `broadcast.<evento>`. Solo los consume `messaging`; no son parte del bus entre servicios.
+- **Avisos de cambio en tiempo real:** `servers.resource_changed`, `billing.account_changed`
+  y `admin.backoffice_changed` no llevan datos del recurso, solo qué cambió (`resource`,
+  `server_id`, `user_id`, `kind`). `notifications` los empuja por el socket como `changed` y
+  cada cliente vuelve a pedir por REST lo que necesita. No van firmados porque no exponen nada.
 - **Comparar con el AsyncAPI de `docs`:** `go run ./cmd/eventsgen docs-check ../docs/asyncapi`.
 
 ## Estructura
