@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/admin.account_recovery_rejected.json",
+  "title": "admin.account_recovery_rejected",
+  "description": "AccountRecoveryRejected is published by admin when staff rejects a request to recover an account. Identify marks the request as rejected and emails the user; two-factor authentication stays as it was. Same fields and rules as AccountRecoveryApproved.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "request_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Solicitud de recuperación resuelta (ID de discordia-identify)."
+    },
+    "user_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Usuario dueño de la solicitud (ID de discordia-identify)."
+    },
+    "signature": {
+      "type": "string",
+      "description": "HMAC-SHA256 en hexadecimal. Ver la sección \"Firma\" de la descripción del documento."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "request_id",
+    "user_id",
+    "signature"
+  ]
+}

@@ -10,6 +10,8 @@ const (
 	RoutingKeyProfileUpdated    = "users.profile_updated"
 	RoutingKeyAccountRegistered = "users.account_registered"
 	RoutingKeyEmailVerified     = "users.email_verified"
+
+	RoutingKeyAccountRecoveryRequested = "users.account_recovery_requested"
 )
 
 // AccountRegistered is published by identify once, when an account is created.
@@ -75,4 +77,24 @@ type ProfileUpdated struct {
 	StatusText string `json:"status_text"`
 	// Emoji del estado personalizado, o vacío si no tiene.
 	StatusEmoji string `json:"status_emoji"`
+}
+
+// AccountRecoveryRequested is published by identify when a user with two-factor
+// authentication on, who lost both the authenticator app and every recovery
+// code, asks platform staff to get their account back. The user already passed
+// the first login step (password or OAuth), so identify knows who they are.
+// Only admin consumes it: it keeps the requests that staff reviews in the
+// back-office. Identify allows one pending request per user, so a repeated
+// delivery carries the same RequestID and is harmless. The answer comes back
+// signed as admin.account_recovery_approved or admin.account_recovery_rejected.
+type AccountRecoveryRequested struct {
+	envelope.Meta
+	// ID de la solicitud en discordia-identify.
+	RequestID string `json:"request_id" contract:"format=uuid"`
+	// Usuario que pide recuperar la cuenta (ID de discordia-identify).
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// Lo que el usuario contó sobre su situación, o vacío si no escribió nada.
+	Message string `json:"message" contract:"maxLength=500"`
+	// Momento en que se envió la solicitud, ISO 8601 en UTC.
+	RequestedAt time.Time `json:"requested_at"`
 }
