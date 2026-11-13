@@ -79,7 +79,8 @@ account/
                      un usuario; sin datos, solo qué volver a pedir; consumido por notifications)
 backoffice/
   events.go       -- Changed (Go, publicado por admin cuando cambia algo que el backoffice muestra al staff:
-                     usuarios, servidores, reportes, el equipo de staff o un expediente; lleva a quién avisar,
+                     usuarios, servidores, reportes, el equipo de staff, un expediente o las solicitudes
+                     de recuperación de cuenta; lleva a quién avisar,
                      sin datos; consumido por notifications para empujarlo al backoffice abierto)
 ownership/
   events.go       -- TransferUpdated (Go, publicado por servers en cada cambio de estado de una
@@ -94,10 +95,13 @@ servers/
   events.ex       -- mismo binding en Elixir (consumido por messaging)
 admin/
   events.go       -- UserSuspended, UserReactivated, ServerSuspended,
-                     ServerReactivated, ServerDeletionRequested (Go, publicados
+                     ServerReactivated, ServerDeletionRequested,
+                     AccountRecoveryApproved, AccountRecoveryRejected (Go, publicados
                      por admin, firmados con HMAC: Sign/Verify). El sujeto firmado
-                     es user_id en los de cuenta y server_id en los de servidor
+                     es user_id en los de cuenta, server_id en los de servidor y
+                     request_id más user_id en los de recuperación de cuenta
   events_test.go
+  recovery_test.go
   vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
   events.ex       -- binding Elixir de referencia con sign/6 y verify/3
                      (consumido por messaging y voice); verify/3 lee user_id o
@@ -117,7 +121,7 @@ boosts/
   events_test.go
   events.ex       -- ServerBoostUpdated en Elixir (consumido por messaging)
 users/
-  events.go       -- ProfileUpdated, AccountRegistered (Go), publicados por identify
+  events.go       -- ProfileUpdated, AccountRegistered, AccountRecoveryRequested (Go), publicados por identify
   events_test.go
 permissions/
   events.go       -- RoleUpdated, RoleDeleted, MemberRolesUpdated,
@@ -201,6 +205,20 @@ verificación no se deshace, así que no lleva `version`: repetido o fuera de
 orden (incluso antes de `users.account_registered`) no rompe nada. Para las
 cuentas que ya estaban verificadas, identify re-publica uno por usuario
 (backfill).
+
+`users.account_recovery_requested` lo publica identify cuando un usuario con
+2FA activo, que perdió la app autenticadora y todos sus códigos de
+recuperación, le pide al staff que le devuelva el acceso. El usuario ya pasó
+el primer paso del login (contraseña o proveedor federado). Lleva el id de la
+solicitud y el mensaje opcional del usuario, nunca el email: admin ya lo tiene
+por `users.account_registered`. Identify admite una sola solicitud pendiente
+por usuario, así que una entrega repetida trae el mismo `request_id` y no crea
+nada nuevo. La respuesta vuelve firmada: `admin.account_recovery_approved`
+(identify desactiva el 2FA, invalida los códigos y le avisa por email) o
+`admin.account_recovery_rejected` (solo le avisa). Firman `request_id` y
+`user_id` juntos, así que una aprobación no se puede mover a otra solicitud ni
+a otro usuario. No llevan `version`: una solicitud se resuelve una sola vez e
+identify solo aplica el evento mientras siga pendiente.
 
 `servers.server_updated` (de `servers/`) es una foto completa del servidor
 (nombre, dueño y fecha de creación), no un diff: servers la publica al crear el

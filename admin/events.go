@@ -30,6 +30,9 @@ const (
 	RoutingKeyServerDeletionRequested = "admin.server_deletion_requested"
 	RoutingKeyStaffMemberAdded        = "admin.staff_member_added"
 	RoutingKeyStaffMemberRemoved      = "admin.staff_member_removed"
+
+	RoutingKeyAccountRecoveryApproved = "admin.account_recovery_approved"
+	RoutingKeyAccountRecoveryRejected = "admin.account_recovery_rejected"
 )
 
 type StaffMemberAdded struct {
@@ -193,6 +196,61 @@ func (e ServerDeletionRequested) Verify(secret string) bool {
 	return verify(secret, RoutingKeyServerDeletionRequested, e.Meta, e.ServerID, e.Version, e.Signature)
 }
 
+// AccountRecoveryApproved is published by admin when staff approves a request
+// to recover an account that lost its second factor. Identify reacts by turning
+// two-factor authentication off for that user, invalidating their recovery
+// codes and emailing them. It strips a protection from an account, so identify
+// must check the signature before touching anything.
+//
+// There is no version: a request is resolved only once, and identify applies
+// the event only while the request is still pending, so duplicated deliveries
+// are harmless.
+type AccountRecoveryApproved struct {
+	envelope.Meta
+	// Solicitud de recuperación resuelta (ID de discordia-identify).
+	RequestID string `json:"request_id" contract:"format=uuid"`
+	// Usuario dueño de la solicitud (ID de discordia-identify).
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+	Signature string `json:"signature"`
+}
+
+// AccountRecoveryRejected is published by admin when staff rejects a request to
+// recover an account. Identify marks the request as rejected and emails the
+// user; two-factor authentication stays as it was. Same fields and rules as
+// AccountRecoveryApproved.
+type AccountRecoveryRejected struct {
+	envelope.Meta
+	// Solicitud de recuperación resuelta (ID de discordia-identify).
+	RequestID string `json:"request_id" contract:"format=uuid"`
+	// Usuario dueño de la solicitud (ID de discordia-identify).
+	UserID string `json:"user_id" contract:"format=uuid"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+	Signature string `json:"signature"`
+}
+
+// Sign sets Signature using secret. Admin calls it right before publishing.
+func (e *AccountRecoveryApproved) Sign(secret string) {
+	e.Signature = signRecovery(secret, RoutingKeyAccountRecoveryApproved, e.Meta, e.RequestID, e.UserID)
+}
+
+// Verify reports whether Signature is valid for secret. An empty secret or an
+// empty/malformed signature never verifies.
+func (e AccountRecoveryApproved) Verify(secret string) bool {
+	return verifyRecovery(secret, RoutingKeyAccountRecoveryApproved, e.Meta, e.RequestID, e.UserID, e.Signature)
+}
+
+// Sign sets Signature using secret. Admin calls it right before publishing.
+func (e *AccountRecoveryRejected) Sign(secret string) {
+	e.Signature = signRecovery(secret, RoutingKeyAccountRecoveryRejected, e.Meta, e.RequestID, e.UserID)
+}
+
+// Verify reports whether Signature is valid for secret. An empty secret or an
+// empty/malformed signature never verifies.
+func (e AccountRecoveryRejected) Verify(secret string) bool {
+	return verifyRecovery(secret, RoutingKeyAccountRecoveryRejected, e.Meta, e.RequestID, e.UserID, e.Signature)
+}
+
 // signature is HMAC-SHA256(secret, routing_key \n event_id \n subject_id \n
 // version \n occurred_at), hex-encoded. The subject is the user_id of the
 // account events and the server_id of the server events. The routing key is
@@ -248,4 +306,31 @@ func staffSignature(secret, routingKey string, meta envelope.Meta, userID string
 		routingKey, meta.EventID, userID, meta.OccurredAt.UTC().Format(time.RFC3339Nano),
 	}, "\n")))
 	return mac.Sum(nil)
+}
+
+// recoverySignature is HMAC-SHA256(secret, routing_key \n event_id \n
+// request_id \n user_id \n occurred_at), hex-encoded. Both ids are signed so an
+// approval can't be moved to another request or another user, and the routing
+// key so a rejection can't be replayed as an approval.
+func recoverySignature(secret, routingKey string, meta envelope.Meta, requestID, userID string) []byte {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(strings.Join([]string{
+		routingKey, meta.EventID, requestID, userID, meta.OccurredAt.UTC().Format(time.RFC3339Nano),
+	}, "\n")))
+	return mac.Sum(nil)
+}
+
+func signRecovery(secret, routingKey string, meta envelope.Meta, requestID, userID string) string {
+	return hex.EncodeToString(recoverySignature(secret, routingKey, meta, requestID, userID))
+}
+
+func verifyRecovery(secret, routingKey string, meta envelope.Meta, requestID, userID, got string) bool {
+	if secret == "" || got == "" {
+		return false
+	}
+	gotBytes, err := hex.DecodeString(got)
+	if err != nil {
+		return false
+	}
+	return hmac.Equal(gotBytes, recoverySignature(secret, routingKey, meta, requestID, userID))
 }

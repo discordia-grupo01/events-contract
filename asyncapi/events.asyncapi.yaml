@@ -13,6 +13,24 @@ servers:
         default: localhost:5672
 defaultContentType: application/json
 channels:
+  adminAccountRecoveryApproved:
+    address: admin.account_recovery_approved
+    title: admin.account_recovery_approved
+    description: 'AccountRecoveryApproved is published by admin when staff approves a request to recover an account that lost its second factor. Identify reacts by turning two-factor authentication off for that user, invalidating their recovery codes and emailing them. It strips a protection from an account, so identify must check the signature before touching anything. There is no version: a request is resolved only once, and identify applies the event only while the request is still pending, so duplicated deliveries are harmless.'
+    messages:
+      accountRecoveryApproved:
+        $ref: '#/components/messages/AccountRecoveryApproved'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  adminAccountRecoveryRejected:
+    address: admin.account_recovery_rejected
+    title: admin.account_recovery_rejected
+    description: AccountRecoveryRejected is published by admin when staff rejects a request to recover an account. Identify marks the request as rejected and emails the user; two-factor authentication stays as it was. Same fields and rules as AccountRecoveryApproved.
+    messages:
+      accountRecoveryRejected:
+        $ref: '#/components/messages/AccountRecoveryRejected'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
   adminServerDeletionRequested:
     address: admin.server_deletion_requested
     title: admin.server_deletion_requested
@@ -86,7 +104,7 @@ channels:
   adminBackofficeChanged:
     address: admin.backoffice_changed
     title: admin.backoffice_changed
-    description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+    description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself, the investigation file of a user or a server, or an account recovery request. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
     messages:
       backofficeChanged:
         $ref: '#/components/messages/BackofficeChanged'
@@ -423,6 +441,15 @@ channels:
         $ref: '#/components/messages/ServerUpdated'
     bindings:
       $ref: '#/components/channelBindings/discordiaEvents'
+  usersAccountRecoveryRequested:
+    address: users.account_recovery_requested
+    title: users.account_recovery_requested
+    description: 'AccountRecoveryRequested is published by identify when a user with two-factor authentication on, who lost both the authenticator app and every recovery code, asks platform staff to get their account back. The user already passed the first login step (password or OAuth), so identify knows who they are. Only admin consumes it: it keeps the requests that staff reviews in the back-office. Identify allows one pending request per user, so a repeated delivery carries the same RequestID and is harmless. The answer comes back signed as admin.account_recovery_approved or admin.account_recovery_rejected.'
+    messages:
+      accountRecoveryRequested:
+        $ref: '#/components/messages/AccountRecoveryRequested'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
   usersAccountRegistered:
     address: users.account_registered
     title: users.account_registered
@@ -592,6 +619,38 @@ channels:
     bindings:
       $ref: '#/components/channelBindings/messagingBroadcast'
 operations:
+  adminPublishesAccountRecoveryApproved:
+    action: send
+    title: discordia-admin publica admin.account_recovery_approved
+    channel:
+      $ref: '#/channels/adminAccountRecoveryApproved'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  identifyServiceReceivesAccountRecoveryApproved:
+    action: receive
+    title: discordia-identify-service consume admin.account_recovery_approved
+    channel:
+      $ref: '#/channels/adminAccountRecoveryApproved'
+    bindings:
+      amqp:
+        ack: true
+  adminPublishesAccountRecoveryRejected:
+    action: send
+    title: discordia-admin publica admin.account_recovery_rejected
+    channel:
+      $ref: '#/channels/adminAccountRecoveryRejected'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  identifyServiceReceivesAccountRecoveryRejected:
+    action: receive
+    title: discordia-identify-service consume admin.account_recovery_rejected
+    channel:
+      $ref: '#/channels/adminAccountRecoveryRejected'
+    bindings:
+      amqp:
+        ack: true
   adminPublishesServerDeletionRequested:
     action: send
     title: discordia-admin publica admin.server_deletion_requested
@@ -1480,6 +1539,22 @@ operations:
     bindings:
       amqp:
         ack: true
+  identifyServicePublishesAccountRecoveryRequested:
+    action: send
+    title: discordia-identify-service publica users.account_recovery_requested
+    channel:
+      $ref: '#/channels/usersAccountRecoveryRequested'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  adminReceivesAccountRecoveryRequested:
+    action: receive
+    title: discordia-admin consume users.account_recovery_requested
+    channel:
+      $ref: '#/channels/usersAccountRecoveryRequested'
+    bindings:
+      amqp:
+        ack: true
   identifyServicePublishesAccountRegistered:
     action: send
     title: discordia-identify-service publica users.account_registered
@@ -1797,6 +1872,34 @@ components:
           autoDelete: false
           vhost: /
   messages:
+    AccountRecoveryApproved:
+      name: AccountRecoveryApproved
+      title: admin.account_recovery_approved
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AccountRecoveryApproved'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            request_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: signature
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    AccountRecoveryRejected:
+      name: AccountRecoveryRejected
+      title: admin.account_recovery_rejected
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AccountRecoveryRejected'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            request_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            signature: signature
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
     ServerDeletionRequested:
       name: ServerDeletionRequested
       title: admin.server_deletion_requested
@@ -2467,6 +2570,20 @@ components:
             occurred_at: "2026-11-10T15:00:00Z"
             owner_id: owner-id
             server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+    AccountRecoveryRequested:
+      name: AccountRecoveryRequested
+      title: users.account_recovery_requested
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AccountRecoveryRequested'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            message: message
+            occurred_at: "2026-11-10T15:00:00Z"
+            request_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            requested_at: "2026-11-10T15:00:00Z"
+            user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
     AccountRegistered:
       name: AccountRegistered
       title: users.account_registered
@@ -2809,6 +2926,54 @@ components:
               version: 1
             topic: user:0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
   schemas:
+    AccountRecoveryApproved:
+      description: 'AccountRecoveryApproved is published by admin when staff approves a request to recover an account that lost its second factor. Identify reacts by turning two-factor authentication off for that user, invalidating their recovery codes and emailing them. It strips a protection from an account, so identify must check the signature before touching anything. There is no version: a request is resolved only once, and identify applies the event only while the request is still pending, so duplicated deliveries are harmless.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        request_id:
+          type: string
+          format: uuid
+          description: Solicitud de recuperación resuelta (ID de discordia-identify).
+        user_id:
+          type: string
+          format: uuid
+          description: Usuario dueño de la solicitud (ID de discordia-identify).
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, request_id, user_id, signature]
+    AccountRecoveryRejected:
+      description: AccountRecoveryRejected is published by admin when staff rejects a request to recover an account. Identify marks the request as rejected and emails the user; two-factor authentication stays as it was. Same fields and rules as AccountRecoveryApproved.
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        request_id:
+          type: string
+          format: uuid
+          description: Solicitud de recuperación resuelta (ID de discordia-identify).
+        user_id:
+          type: string
+          format: uuid
+          description: Usuario dueño de la solicitud (ID de discordia-identify).
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, request_id, user_id, signature]
     ServerDeletionRequested:
       description: 'ServerDeletionRequested is published by admin when staff asks to delete a server. It is a request, not the fact: servers runs the same cascade it runs when the owner deletes the server and then publishes servers.server_deleted, which the other services already consume. It is irreversible, so servers must check the signature before touching anything. Same fields as ServerSuspended.'
       type: object
@@ -2993,7 +3158,7 @@ components:
           description: 'Qué volver a pedir: el saldo de puntos, los boosts del usuario o sus compras.'
       required: [event_id, occurred_at, user_id, resource]
     BackofficeChanged:
-      description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself or the investigation file of a user or a server. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
+      description: 'Changed is published by admin when something the back-office shows to staff changed: a user, a server, a report, the staff itself, the investigation file of a user or a server, or an account recovery request. It carries no data, only what to ask for again, and the staff members who should be told, so notifications can push it to them without knowing who is staff. It is not signed: the worst a forged one can do is make a staff screen ask again for what it already shows.'
       type: object
       properties:
         event_id:
@@ -3013,7 +3178,8 @@ components:
             - staff
             - dossier
             - metrics
-          description: 'Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff, un expediente o las métricas.'
+            - recovery_requests
+          description: 'Qué volver a pedir: usuarios, servidores, reportes, el equipo de staff, un expediente, las métricas o las solicitudes de recuperación de cuenta.'
         audience_user_ids:
           type: array
           items:
@@ -4059,6 +4225,35 @@ components:
           format: date-time
           description: Fecha de creación del servidor, ISO 8601 en UTC. No cambia entre fotos.
       required: [event_id, occurred_at, server_id, name, owner_id, created_at]
+    AccountRecoveryRequested:
+      description: 'AccountRecoveryRequested is published by identify when a user with two-factor authentication on, who lost both the authenticator app and every recovery code, asks platform staff to get their account back. The user already passed the first login step (password or OAuth), so identify knows who they are. Only admin consumes it: it keeps the requests that staff reviews in the back-office. Identify allows one pending request per user, so a repeated delivery carries the same RequestID and is harmless. The answer comes back signed as admin.account_recovery_approved or admin.account_recovery_rejected.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        request_id:
+          type: string
+          format: uuid
+          description: ID de la solicitud en discordia-identify.
+        user_id:
+          type: string
+          format: uuid
+          description: Usuario que pide recuperar la cuenta (ID de discordia-identify).
+        message:
+          type: string
+          maxLength: 500
+          description: Lo que el usuario contó sobre su situación, o vacío si no escribió nada.
+        requested_at:
+          type: string
+          format: date-time
+          description: Momento en que se envió la solicitud, ISO 8601 en UTC.
+      required: [event_id, occurred_at, request_id, user_id, message, requested_at]
     AccountRegistered:
       description: 'AccountRegistered is published by identify once, when an account is created. It carries the data of the account itself (as opposed to the public profile of ProfileUpdated) for the one consumer that needs it: admin''s back-office listing, which searches users by email. Email and CreatedAt never change, so there is no version: a repeated delivery is harmless because applying it again leaves the same values. Do not add this event to consumers that only need the public profile -- the email is private data. EmailVerified is true when the account was born verified (OAuth sign-up) and false for an email sign-up, which stays pending until EmailVerified arrives. Events published before this field existed don''t carry it, so they decode as false.'
       type: object
