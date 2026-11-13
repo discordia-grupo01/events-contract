@@ -81,6 +81,8 @@ func requiring(e Entry, fields ...string) Entry {
 
 func All() []Entry {
 	return []Entry{
+		signed(event(admin.RoutingKeyAccountRecoveryApproved, admin.AccountRecoveryApproved{}, "admin", "identify-service")),
+		signed(event(admin.RoutingKeyAccountRecoveryRejected, admin.AccountRecoveryRejected{}, "admin", "identify-service")),
 		signed(event(admin.RoutingKeyServerDeletionRequested, admin.ServerDeletionRequested{}, "admin", "servers")),
 		signed(event(admin.RoutingKeyServerReactivated, admin.ServerReactivated{}, "admin", "messaging", "servers")),
 		signed(event(admin.RoutingKeyServerSuspended, admin.ServerSuspended{}, "admin", "messaging", "servers", "voice-sfu")),
@@ -128,6 +130,7 @@ func All() []Entry {
 		event(servers.RoutingKeyResourceChanged, servers.ResourceChanged{}, "servers", "notifications"),
 		event(servers.RoutingKeyServerDeleted, servers.ServerDeleted{}, "servers", "admin", "messaging", "notifications", "voice-sfu"),
 		event(servers.RoutingKeyServerUpdated, servers.ServerUpdated{}, "servers", "admin"),
+		event(users.RoutingKeyAccountRecoveryRequested, users.AccountRecoveryRequested{}, "identify-service", "admin"),
 		event(users.RoutingKeyAccountRegistered, users.AccountRegistered{}, "identify-service", "admin"),
 		event(users.RoutingKeyEmailVerified, users.EmailVerified{}, "identify-service", "admin"),
 		event(users.RoutingKeyProfileUpdated, users.ProfileUpdated{}, "identify-service", "admin", "messaging", "servers"),
