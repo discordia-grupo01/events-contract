@@ -77,6 +77,7 @@ func TestServerUpdatedJSONShape(t *testing.T) {
 		Name:      "Mi comunidad",
 		OwnerID:   "user-1",
 		CreatedAt: time.Date(2025, 12, 31, 23, 0, 0, 0, time.UTC),
+		IconURL:   "/v1/servers/server-1/icon?v=abc123",
 	}
 
 	body, err := json.Marshal(event)
@@ -95,6 +96,7 @@ func TestServerUpdatedJSONShape(t *testing.T) {
 		"name":        "Mi comunidad",
 		"owner_id":    "user-1",
 		"created_at":  "2025-12-31T23:00:00Z",
+		"icon_url":    "/v1/servers/server-1/icon?v=abc123",
 	}
 	for key, wantValue := range want {
 		gotValue, ok := got[key]
