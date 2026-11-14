@@ -221,8 +221,9 @@ a otro usuario. No llevan `version`: una solicitud se resuelve una sola vez e
 identify solo aplica el evento mientras siga pendiente.
 
 `servers.server_updated` (de `servers/`) es una foto completa del servidor
-(nombre, dueño y fecha de creación), no un diff: servers la publica al crear el
-servidor y en cada cambio de nombre o de dueño. Como los eventos de
+(nombre, ícono, dueño y fecha de creación), no un diff: servers la publica al
+crear el servidor y en cada cambio de nombre, de ícono o de dueño. `icon_url` es
+opcional: los eventos anteriores a 0.22.0 no lo traen y se toma como vacío. Como los eventos de
 `permissions/`, no lleva `version`: el consumidor se queda con la foto de
 `occurred_at` más nueva de cada servidor, así que un evento repetido o fuera de
 orden no pisa datos más recientes. Lo consume `admin` para armar su listado de

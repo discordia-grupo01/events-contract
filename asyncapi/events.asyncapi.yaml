@@ -435,7 +435,7 @@ channels:
   serversServerUpdated:
     address: servers.server_updated
     title: servers.server_updated
-    description: 'ServerUpdated is published by servers when a server is created and every time its name or owner changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. There is no version: the consumer keeps the snapshot with the newest occurred_at of each server, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as the permissions events). Built for admin''s back-office listing, which shows the name, owner and creation date of every server without asking servers.'
+    description: 'ServerUpdated is published by servers when a server is created and every time its name, icon or owner changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. There is no version: the consumer keeps the snapshot with the newest occurred_at of each server, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as the permissions events). Built for admin''s back-office listing, which shows the name, icon, owner and creation date of every server without asking servers.'
     messages:
       serverUpdated:
         $ref: '#/components/messages/ServerUpdated'
@@ -2566,6 +2566,7 @@ components:
         - payload:
             created_at: "2026-11-10T15:00:00Z"
             event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            icon_url: icon-url
             name: name
             occurred_at: "2026-11-10T15:00:00Z"
             owner_id: owner-id
@@ -4201,7 +4202,7 @@ components:
           description: Ids de todos los canales (texto y voz) que tenía el servidor. Puede ser vacío, nunca null.
       required: [event_id, occurred_at, server_id, channel_ids]
     ServerUpdated:
-      description: 'ServerUpdated is published by servers when a server is created and every time its name or owner changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. There is no version: the consumer keeps the snapshot with the newest occurred_at of each server, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as the permissions events). Built for admin''s back-office listing, which shows the name, owner and creation date of every server without asking servers.'
+      description: 'ServerUpdated is published by servers when a server is created and every time its name, icon or owner changes. It is a full snapshot, not a diff, so consumers don''t need the previous state. There is no version: the consumer keeps the snapshot with the newest occurred_at of each server, so a repeated or out-of-order delivery doesn''t overwrite newer data (same rule as the permissions events). Built for admin''s back-office listing, which shows the name, icon, owner and creation date of every server without asking servers.'
       type: object
       properties:
         event_id:
@@ -4224,6 +4225,9 @@ components:
           type: string
           format: date-time
           description: Fecha de creación del servidor, ISO 8601 en UTC. No cambia entre fotos.
+        icon_url:
+          type: string
+          description: 'Dirección del ícono tal como la guarda servers: URL pública de Supabase Storage o ruta del gateway (`/v1/servers/{id}/icon?v=...`). Vacío si no tiene ícono. Los eventos anteriores a la versión 0.22.0 no lo traen: el consumidor lo toma como vacío.'
       required: [event_id, occurred_at, server_id, name, owner_id, created_at]
     AccountRecoveryRequested:
       description: 'AccountRecoveryRequested is published by identify when a user with two-factor authentication on, who lost both the authenticator app and every recovery code, asks platform staff to get their account back. The user already passed the first login step (password or OAuth), so identify knows who they are. Only admin consumes it: it keeps the requests that staff reviews in the back-office. Identify allows one pending request per user, so a repeated delivery carries the same RequestID and is harmless. The answer comes back signed as admin.account_recovery_approved or admin.account_recovery_rejected.'
