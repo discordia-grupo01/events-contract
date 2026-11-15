@@ -41,6 +41,9 @@ const (
 	ReasonServerSuspended = "server_suspended"
 	ReasonNotAMember      = "not_a_member"
 	ReasonCancelled       = "cancelled"
+	// ReasonMaxLevelReached: the server already has the boosts of the last
+	// level, so one more would add nothing until someone removes one.
+	ReasonMaxLevelReached = "max_level_reached"
 )
 
 // SagaEvent is the message of every signed step. Processing it twice has no
@@ -51,7 +54,7 @@ type SagaEvent struct {
 	ServerID string `json:"server_id" contract:"format=uuid"`
 	UserID   string `json:"user_id" contract:"format=uuid"`
 	// Reason is only set on servers.server_boost_rejected.
-	Reason    string `json:"reason,omitempty" contract:"enum=server_not_found|server_suspended|not_a_member|cancelled"`
+	Reason    string `json:"reason,omitempty" contract:"enum=server_not_found|server_suspended|not_a_member|cancelled|max_level_reached"`
 	Signature string `json:"signature" contract:"pattern=^[0-9a-f]{64}$"`
 }
 

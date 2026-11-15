@@ -9,6 +9,7 @@ import (
 
 	"github.com/discordia-grupo01/events-contract/boosts"
 	"github.com/discordia-grupo01/events-contract/envelope"
+	"github.com/discordia-grupo01/events-contract/validate"
 )
 
 const secret = "test-secret"
@@ -143,6 +144,33 @@ func TestRejectedCarriesTheReason(t *testing.T) {
 	}
 	if !strings.Contains(string(body), `"reason":"cancelled"`) {
 		t.Errorf("body = %s", body)
+	}
+}
+
+func TestEveryRejectionReasonPassesTheSchema(t *testing.T) {
+	reasons := []string{
+		boosts.ReasonServerNotFound,
+		boosts.ReasonServerSuspended,
+		boosts.ReasonNotAMember,
+		boosts.ReasonCancelled,
+		boosts.ReasonMaxLevelReached,
+	}
+	for _, reason := range reasons {
+		e := boosts.SagaEvent{
+			Meta:     envelope.Meta{EventID: "0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b", OccurredAt: time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)},
+			BoostID:  "0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b",
+			ServerID: "0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b",
+			UserID:   "0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b",
+			Reason:   reason,
+		}
+		e.Sign(boosts.RoutingKeyRejected, secret)
+		body, err := json.Marshal(e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := validate.Validate(boosts.RoutingKeyRejected, body); err != nil {
+			t.Errorf("reason %q: %v", reason, err)
+		}
 	}
 }
 
