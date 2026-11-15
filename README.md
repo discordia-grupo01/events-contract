@@ -282,7 +282,9 @@ Los eventos de `boosts/` son una saga entre billing y servers: billing es dueño
 de los puntos, y servers de los miembros, la suspensión y el nivel. billing
 reserva los puntos y publica `billing.server_boost_requested`; servers responde
 `servers.server_boost_applied` o `servers.server_boost_rejected` con un `reason`,
-y en ese caso billing devuelve los puntos. Solo una regla de negocio rechaza: un
+y en ese caso billing devuelve los puntos. Los motivos son `server_not_found`,
+`server_suspended`, `not_a_member`, `max_level_reached` (el servidor ya tiene los
+boosts del último nivel) y `cancelled`. Solo una regla de negocio rechaza: un
 error técnico reencola el evento. Si servers no responde en 24 horas, billing
 devuelve los puntos y publica `billing.server_boost_cancelled`.
 `billing.server_boost_removed` es el retiro del dueño, sin devolución. Procesar
