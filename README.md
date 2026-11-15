@@ -1,394 +1,66 @@
 # events-contract
 
-Structs/tipos compartidos para los eventos que viajan por `discordia.events`
-(RabbitMQ) -- para que ningún servicio mantenga su propia copia del mismo
-evento.
+Contrato de los eventos que viajan por RabbitMQ entre los servicios de Discordia.
 
-La fuente de verdad del *schema* son las structs de Go de este repo. De ellas se
-generan solas, con `go run ./cmd/eventsgen gen`, los JSON Schema, los ejemplos y
-un AsyncAPI completo; el CI falla si lo generado no coincide con el código. El
-AsyncAPI de [`docs`](https://github.com/discordia-grupo01/docs) conserva la
-explicación en prosa y se compara contra este contrato (`eventsgen docs-check`).
+## Tabla de contenidos
 
-## Generación y validación automáticas
+- [Introducción](#introducción)
+- [Pre-requisitos](#pre-requisitos)
+- [Cómo correr](#cómo-correr)
+- [Variables de entorno](#variables-de-entorno)
+- [Comandos Docker](#comandos-docker)
+- [Tests](#tests)
+- [Más documentación](#más-documentación)
 
-```
-structs de Go  ──go run ./cmd/eventsgen gen──▶  schemas/<routing key>.json   (JSON Schema, draft-07)
-                                                 examples/<routing key>.json  (un ejemplo válido por evento)
-                                                 asyncapi/events.asyncapi.yaml (AsyncAPI 3.0 completo)
-```
+## Introducción
 
-- **Agregar un evento:** escribir la struct, la constante `RoutingKey...` y la línea
-  en `catalog/catalog.go` (productor y consumidores); correr `gen` y commitear lo que
-  genera. Un test falla si una constante `RoutingKey...` no está en el catálogo.
-- **Detalles del schema** (formato, largo, valores permitidos, campo opcional) se
-  escriben en la etiqueta `contract` de la struct, separados por `;`:
-  `contract:"format=uuid"`, `contract:"maxLength=160"`, `contract:"enum=a|b"`,
-  `contract:"optional=true"`. Los comentarios de Go pasan a ser las descripciones.
-  `Omit` y `Require` del catálogo ajustan un schema cuando una misma struct sirve a
-  varios eventos (por ejemplo, `reason` solo es obligatorio en `servers.server_boost_rejected`).
-- **Validar en Go:** `validate.Validate(routingKey, cuerpoJSON)` (schemas embebidos).
-  Un campo de más no rompe a nadie: agregar campos es seguro.
-- **Validar en Elixir:** `Discordia.EventsContract.Validator.validate(routing_key, mapa_o_json)`
-  (dependencia de git de `events_contract`; usa `ex_json_schema`). Los ejemplos de
-  `examples/` se validan con los dos validadores en el CI, para que Go y Elixir
-  coincidan.
-- **Versionado:** en cada PR, `eventsgen compat origin/<rama base>` compara los schemas
-  con los de la rama base y falla si se quitó un evento o un campo, cambió un tipo,
-  un campo pasó a ser obligatorio, se restringió un valor, o se agregó un campo
-  obligatorio nuevo (los publicadores viejos no lo mandan). Quitar un campo se hace en dos
-  pasos: primero se deja de usar en los consumidores, después se quita. Si el cambio es
-  intencional, se agrega el routing key a `compat.allow` y se explica en el PR.
-- **Canal interno de `messaging`:** los 13 eventos que viajan entre sus instancias por el
-  exchange `messaging.broadcast` (`fanout`) están en `broadcast/` y en el catálogo como
-  `broadcast.<evento>`. Solo los consume `messaging`; no son parte del bus entre servicios.
-- **Avisos de cambio en tiempo real:** `servers.resource_changed`, `billing.account_changed`
-  y `admin.backoffice_changed` no llevan datos del recurso, solo qué cambió (`resource`,
-  `server_id`, `user_id`, `kind`). `notifications` los empuja por el socket como `changed` y
-  cada cliente vuelve a pedir por REST lo que necesita. No van firmados porque no exponen nada.
-- **Comparar con el AsyncAPI de `docs`:** `go run ./cmd/eventsgen docs-check ../docs/asyncapi`.
+Los servicios de Discordia se avisan los cambios por eventos (por ejemplo, `servers.channel_created`). Para que ninguno mantenga su propia copia de cómo es cada evento, este repositorio define el contrato en un solo lugar: el nombre de cada evento, sus campos, quién lo publica y quién lo consume.
 
-## Estructura
-
-Una carpeta por dominio/evento, no por lenguaje -- por ahora todo es Go
-(único lenguaje que hay hoy), y el día que un evento necesite binding
-Elixir, el archivo va al lado del `.go` en la carpeta de ese mismo evento,
-no en un árbol paralelo:
+La fuente de verdad son las structs de Go de este repositorio. De ellas se generan solos:
 
 ```
-envelope/   -- campos comunes a todo evento (event_id, occurred_at)
-broker/     -- topología compartida del exchange (nombre, tipo)
-membership/
-  events.go       -- MemberJoined, MemberLeft (Go)
-  events_test.go
-  events.ex       -- binding Elixir de MemberLeft (consumido por messaging)
-channels/
-  events.go       -- ChannelCreated, ChannelDeleted, ChannelAccessRevoked (Go, publicados por servers)
-  events_test.go
-  events.ex       -- mismo binding en Elixir (consumido por messaging)
-moderation/
-  events.go       -- MemberBanned, MemberUnbanned, MemberKicked, MemberMuted,
-                     MemberUnmuted, WordFilterUpdated, ModerationActionRecorded (Go)
-  events_test.go
-reports/
-  events.go       -- ReportUpdated (Go, publicado por servers, consumido por admin
-                     para el expediente de investigación)
-  events_test.go
-account/
-  events.go       -- Changed (Go, publicado por billing cuando cambia el saldo de puntos, los boosts o las compras de
-                     un usuario; sin datos, solo qué volver a pedir; consumido por notifications)
-backoffice/
-  events.go       -- Changed (Go, publicado por admin cuando cambia algo que el backoffice muestra al staff:
-                     usuarios, servidores, reportes, el equipo de staff, un expediente o las solicitudes
-                     de recuperación de cuenta; lleva a quién avisar,
-                     sin datos; consumido por notifications para empujarlo al backoffice abierto)
-ownership/
-  events.go       -- TransferUpdated (Go, publicado por servers en cada cambio de estado de una
-                     transferencia de propiedad: pendiente, aceptada, rechazada, cancelada o vencida;
-                     consumido por notifications para avisar al receptor y al dueño anterior)
-servers/
-  events.go       -- ServerDeleted, ServerUpdated, EmojiCreated, EmojiDeleted
-                     (Go, publicados por servers)
-                     ResourceChanged (Go, publicado por servers cuando cambia algo que ningún otro evento
-                     avisa: datos del servidor, canales y categorías, roles; sin datos, solo qué volver a pedir)
-  events_test.go
-  events.ex       -- mismo binding en Elixir (consumido por messaging)
-admin/
-  events.go       -- UserSuspended, UserReactivated, ServerSuspended,
-                     ServerReactivated, ServerDeletionRequested,
-                     AccountRecoveryApproved, AccountRecoveryRejected (Go, publicados
-                     por admin, firmados con HMAC: Sign/Verify). El sujeto firmado
-                     es user_id en los de cuenta, server_id en los de servidor y
-                     request_id más user_id en los de recuperación de cuenta
-  events_test.go
-  recovery_test.go
-  vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
-  events.ex       -- binding Elixir de referencia con sign/6 y verify/3
-                     (consumido por messaging y voice); verify/3 lee user_id o
-                     server_id según la routing key
-  events_test.exs -- los mismos vectores en Elixir (ExUnit), más los rechazos de verify/3
-  test_helper.exs
-billing/
-  events.go       -- PremiumUpdated (Go, publicado por billing,
-                     firmado con HMAC: Sign/Verify)
-  events_test.go
-  vectors_test.go -- vectores de firma fijos que todo port a Elixir debe reproducir
-  events.ex       -- binding Elixir de referencia con sign/8 y verify/2
-                     (consumido por messaging)
-boosts/
-  events.go       -- SagaEvent (firmado con HMAC: Sign/Verify) y ServerBoostUpdated (Go),
-                     publicados por billing y servers
-  events_test.go
-  events.ex       -- ServerBoostUpdated en Elixir (consumido por messaging)
-users/
-  events.go       -- ProfileUpdated, AccountRegistered, AccountRecoveryRequested (Go), publicados por identify
-  events_test.go
-permissions/
-  events.go       -- RoleUpdated, RoleDeleted, MemberRolesUpdated,
-                     ChannelOverridesUpdated, OwnerUpdated (Go, publicados por servers)
-  events_test.go
-  events.ex       -- binding de referencia en Elixir (consumido por messaging)
-voice/
-  events.go       -- voice.participants_joined, voice.participant_left (consume server)
-  events.ex       -- Mensajes publicados por Elixir signaling
-  events_test.go 
-messages/
-  events.go       -- MessageCreated y DirectMessageCreated (Go), publicados por messaging
-                     al crear un mensaje en un canal de servidor o en un mensaje directo
-                     (con un extracto del texto, solo para armar el push)
-  events_test.go
-  events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
-presence/
-  events.go       -- UserPresenceChanged (Go), publicado por messaging cuando cambia
-                     si el usuario tiene una conexión abierta y activa
-platform/
-  events.go       -- StatusChanged y HealthChanged (Go), publicados por metrics
-                     para que notifications difunda avisos a clientes
-  events_test.go
-  events.ex       -- binding Elixir (publicado por messaging, consumido por notifications)
+structs de Go  ──go run ./cmd/eventsgen gen──▶  schemas/<evento>.json   (JSON Schema)
+                                                 examples/<evento>.json  (un ejemplo válido de cada uno)
+                                                 asyncapi/events.asyncapi.yaml (AsyncAPI completo)
 ```
 
-Un ban publica, en la misma transacción, `servers.member_left` (de
-`membership/`) y `servers.member_banned` (de `moderation/`): quien solo
-lleva la membresía escucha el primero; quien tiene que reaccionar al ban
-(cortar sesiones de mensajería/voz, auditoría) escucha el segundo. El
-motivo del ban no viaja en el evento (minimización de datos).
+Los servicios lo usan como dependencia: los de Go importan las structs, y los de Elixir usan un validador que lee los mismos JSON Schema. Hoy los servicios validan cada evento que publican y consumen y, si no cumple el contrato, lo anotan en el log sin rechazarlo.
 
-Una expulsión hace lo mismo con `servers.member_kicked`: publica también
-`servers.member_left` en la misma transacción. A diferencia del ban, el
-expulsado puede volver a unirse con una invitación válida. Pensado para que
-`notifications` le avise al expulsado.
+Hay tres cosas que conviene saber:
 
-Eliminar un servidor publica, en la misma transacción que el borrado, un
-`servers.member_left` por cada miembro (quien lleva la membresía, como
-`identify-service`, no necesita saber nada nuevo) y un
-`servers.server_deleted` (de `servers/`) con los ids de todos sus canales, para
-quien guarda datos por canal (`messaging` borra ahí los mensajes).
+- **Los eventos firmados.** Los que cambian el estado de un usuario o de un servidor (`admin.user_suspended`, `billing.premium_updated`) van firmados con HMAC, para que otro servicio no pueda falsificarlos.
+- **Los avisos de cambio en tiempo real.** `servers.resource_changed`, `billing.account_changed` y `admin.backoffice_changed` no llevan datos, solo qué cambió. `notifications` se los empuja a los clientes por WebSocket y cada cliente vuelve a pedir lo que necesita por REST.
+- **La compatibilidad.** En cada pull request, `eventsgen compat` compara los schemas con los de la rama base y falla si el cambio rompería a algún consumidor: quitar un evento o un campo, cambiar un tipo o agregar un campo obligatorio nuevo.
 
-`servers.channel_access_revoked` (de `channels/`) avisa qui�nes dejaron de
-ver un canal: miembros que ten�an `VIEW_CHANNELS` en �l (despu�s de los
-overrides por rol, #57) y ya no lo tienen. servers lo calcula comparando el
-antes y el despu�s dentro de la misma transacci�n del cambio, y publica uno
-por canal afectado (de texto o de voz), con `user_ids` = solo los que
-perdieron acceso (nunca vac�o). Lo disparan: crear/editar/borrar un override,
-editar o borrar un rol, asignar o quitar un rol, aceptar una transferencia de
-propiedad, y expulsar, banear o abandonar (en esos tres casos adem�s del
-`servers.member_left`). Ganar acceso no se publica. Pensado para cortar lo que
-el usuario tenga abierto en ese canal: `messaging` cierra su socket y
-`voice-sfu` lo saca de la sala de voz. Como solo corta y al reconectar se
-vuelve a chequear el estado actual, un evento repetido o fuera de orden cuesta
-a lo sumo una reconexi�n de m�s -- no hace falta descartar eventos viejos.
+## Pre-requisitos
 
-`users.profile_updated` es una foto completa del perfil público (nombre,
-avatar, descripción y estado), no un diff: identify lo publica al crear un
-usuario y en cada cambio de perfil o estado. `version` crece con cada cambio
-del mismo usuario; el consumidor aplica una foto solo si su `version` es
-mayor a la que ya tiene, así que eventos repetidos o fuera de orden no pisan
-datos más nuevos. El email no viaja nunca (minimización de datos).
+- **Go 1.22**, para generar y probar el contrato.
+- **Elixir 1.16.2** y **Erlang/OTP 26.2**, solo para probar el validador en Elixir.
+- **Docker**, solo si preferís correr los tests sin instalar Go.
 
-`users.account_registered` lo publica identify una sola vez, al crear la cuenta,
-con los datos de la cuenta que no son perfil público: `email`, `name` y
-`created_at`. Existe únicamente para el listado del backoffice (`admin`), que
-tiene que buscar usuarios por email; por eso es la excepción a "el email no
-viaja nunca" de `users.profile_updated`, y ningún otro consumidor debería
-suscribirse. `email` y `created_at` no cambian, así que no lleva `version`:
-aplicarlo dos veces deja los mismos valores. Para las cuentas que ya existían
-cuando se sumó el evento, identify re-publica uno por usuario (backfill).
-`email_verified` dice si la cuenta nació verificada (alta por OAuth); los
-eventos publicados antes de que existiera el campo no lo traen y valen `false`.
+## Cómo correr
 
-`users.email_verified` lo publica identify una sola vez, cuando el usuario
-confirma el email de una cuenta creada con email (las altas por OAuth no lo
-publican). Como `users.account_registered`, existe únicamente para el listado
-del backoffice, que muestra como "pendiente" a quien todavía no confirmó. La
-verificación no se deshace, así que no lleva `version`: repetido o fuera de
-orden (incluso antes de `users.account_registered`) no rompe nada. Para las
-cuentas que ya estaban verificadas, identify re-publica uno por usuario
-(backfill).
+No es un servicio: se genera y se prueba.
 
-`users.account_recovery_requested` lo publica identify cuando un usuario con
-2FA activo, que perdió la app autenticadora y todos sus códigos de
-recuperación, le pide al staff que le devuelva el acceso. El usuario ya pasó
-el primer paso del login (contraseña o proveedor federado). Lleva el id de la
-solicitud y el mensaje opcional del usuario, nunca el email: admin ya lo tiene
-por `users.account_registered`. Identify admite una sola solicitud pendiente
-por usuario, así que una entrega repetida trae el mismo `request_id` y no crea
-nada nuevo. La respuesta vuelve firmada: `admin.account_recovery_approved`
-(identify desactiva el 2FA, invalida los códigos y le avisa por email) o
-`admin.account_recovery_rejected` (solo le avisa). Firman `request_id` y
-`user_id` juntos, así que una aprobación no se puede mover a otra solicitud ni
-a otro usuario. No llevan `version`: una solicitud se resuelve una sola vez e
-identify solo aplica el evento mientras siga pendiente.
+### Agregar un evento
 
-`servers.server_updated` (de `servers/`) es una foto completa del servidor
-(nombre, ícono, dueño y fecha de creación), no un diff: servers la publica al
-crear el servidor y en cada cambio de nombre, de ícono o de dueño. `icon_url` es
-opcional: los eventos anteriores a 0.22.0 no lo traen y se toma como vacío. Como los eventos de
-`permissions/`, no lleva `version`: el consumidor se queda con la foto de
-`occurred_at` más nueva de cada servidor, así que un evento repetido o fuera de
-orden no pisa datos más recientes. Lo consume `admin` para armar su listado de
-servidores sin preguntarle a servers; el número de miembros lo calcula con
-`servers.member_joined` y `servers.member_left`. Al sumar el consumidor hay que
-relanzar el backfill de servers, porque RabbitMQ no guarda lo publicado antes
-de que existiera su cola.
+1. Escribir la struct del evento en la carpeta de su dominio, con la constante `RoutingKey...`.
+2. Sumar una línea en `catalog/catalog.go` con quién lo publica y quién lo consume.
+3. Regenerar los schemas, los ejemplos y el AsyncAPI:
 
-`servers.emoji_created` y `servers.emoji_deleted` (de `servers/`) llevan los
-mismos datos: el emoji completo. Un emoji no cambia después de crearse, así que
-no hace falta `version`: su única transición es borrarse, y el borrado gana en
-cualquier orden, aunque el alta llegue después. Borrar un emoji impide usarlo en
-mensajes y reacciones nuevos, pero la imagen se conserva para que el contenido
-histórico la siga mostrando. Los consume `messaging` (cola
-`messaging.server_emojis`) para validar los emojis sin preguntarle a servers.
+```bash
+go run ./cmd/eventsgen gen
+```
 
-`admin.user_suspended` y `admin.user_reactivated` (de `admin/`) los publica
-`admin` cuando el staff suspende o reactiva una cuenta, en la misma
-transacción que el cambio (outbox). Los consumen identify (revoca los refresh
-tokens y rechaza login y refresh), servers, messaging y voz (rechazan toda
-acción del usuario y cortan sus sockets y su sala de voz). `version` crece con
-cada suspensión o reactivación del mismo usuario y el consumidor aplica el
-evento solo si es mayor a la que ya tiene, así que un evento repetido o fuera
-de orden es inofensivo. El motivo de la suspensión no viaja.
+4. Comitear lo que se generó. Si no coincide con el código, el CI falla.
 
-`admin.staff_member_added` y `admin.staff_member_removed` sincronizan la
-proyección local de autorización de los servicios que necesitan validar staff.
-También llevan firma HMAC y deben verificarse antes de actualizar la
-proyección.
+Los detalles de cada campo (formato, largo, valores permitidos, si es opcional) se escriben en la etiqueta `contract` de la struct, separados por `;`: `contract:"format=uuid"`, `contract:"maxLength=160"`, `contract:"enum=a|b"`, `contract:"optional=true"`. Los comentarios de Go pasan a ser las descripciones.
 
-Son los únicos eventos **firmados**: una suspensión falsa dejaría a cualquiera
-sin acceso y RabbitMQ no impide que otro cliente con credenciales del broker
-publique una routing key `admin.*`. `admin` y cada consumidor comparten
-`ADMIN_EVENTS_HMAC_SECRET`; el publisher llama a `Sign(secret)` justo antes de
-publicar y el consumidor descarta (sin reencolar) todo evento cuyo `Verify(secret)`
-da falso. La firma es HMAC-SHA256 sobre la routing key, `event_id`, `user_id`,
-`version` y `occurred_at`; incluir la routing key evita reusar una suspensión
-válida como si fuera una reactivación. Un secreto vacío nunca verifica.
-
-`billing.premium_updated` (de `billing/`) es una foto completa del Premium de
-un usuario, no un diff: billing la publica cuando Premium empieza, se renueva,
-deja de renovarse, se revoca (devolución o contracargo) o vence, en la misma
-transacción que el cambio (outbox). El consumidor aplica `active`; cuando pasa
-`premium_until`, billing publica otra foto con `active = false`, así que nadie
-necesita un reloj. `premium_until` (null si nunca pagó) y `renews` son para
-mostrar. `version` crece con cada foto del mismo usuario y el consumidor la
-aplica solo si es mayor a la que ya tiene. Lo consumen identify (para el
-campo `premium` del perfil) y messaging (límite de adjuntos). Como los de
-`admin/`, va **firmado**: un evento falso regalaría Premium. billing y cada
-consumidor comparten `BILLING_EVENTS_HMAC_SECRET`; la firma es HMAC-SHA256
-sobre la routing key, `event_id`, `user_id`, `active`, `premium_until`,
-`renews`, `version` y `occurred_at`. `Sign` pasa las fechas a UTC para que el
-JSON lleve exactamente el texto firmado.
-
-Los eventos de `boosts/` son una saga entre billing y servers: billing es dueño
-de los puntos, y servers de los miembros, la suspensión y el nivel. billing
-reserva los puntos y publica `billing.server_boost_requested`; servers responde
-`servers.server_boost_applied` o `servers.server_boost_rejected` con un `reason`,
-y en ese caso billing devuelve los puntos. Los motivos son `server_not_found`,
-`server_suspended`, `not_a_member`, `max_level_reached` (el servidor ya tiene los
-boosts del último nivel) y `cancelled`. Solo una regla de negocio rechaza: un
-error técnico reencola el evento. Si servers no responde en 24 horas, billing
-devuelve los puntos y publica `billing.server_boost_cancelled`.
-`billing.server_boost_removed` es el retiro del dueño, sin devolución. Procesar
-un evento dos veces no tiene efecto, porque `boost_id` identifica el boost en los
-dos lados.
-
-Esos cinco van **firmados** con `BILLING_EVENTS_HMAC_SECRET`, porque un rechazo
-falso regalaría puntos. La firma es HMAC-SHA256 sobre la routing key, `event_id`,
-`boost_id`, `server_id`, `user_id`, `reason` y `occurred_at`; incluir la routing
-key evita reusar un `applied` válido como si fuera un `removed`.
-
-`servers.server_boost_updated` es una foto del servidor (`boost_count`, `level`,
-`version`), no un diff, y el consumidor la aplica solo si `version` es mayor a la
-que ya tiene. La consume `messaging` (cola `messaging.server_boosts`) para el
-límite de adjuntos del nivel. No va firmada, como el resto de `servers.*`.
-
-`servers.word_filter_updated` (de `moderation/`) es la lista completa de
-palabras prohibidas de un servidor, no un diff: servers la publica en cada
-cambio (lista vacía si se borraron todas). `messaging` la usa para rechazar
-mensajes que las contengan; se queda con la de `occurred_at` más nuevo, así
-que un evento repetido o fuera de orden no pisa una lista más reciente.
-
-El expediente de investigación de un usuario (HU #81) se arma en `admin` con dos
-eventos de servers, sin preguntarle nada. `servers.report_updated` (de
-`reports/`) es una foto completa de un reporte de usuario o de mensaje: servers
-la publica al crearlo y en cada cambio de estado (`pending`, `resolved`,
-`dismissed`). No lleva `version`: el consumidor se queda con la foto de
-`occurred_at` más nuevo de cada reporte. Los campos que no aplican viajan como
-`null`, no se omiten (`reported_user_id` en un reporte de mensaje, `channel_id` y
-`message_id` en uno de usuario, `resolved_at` mientras está pendiente).
-`servers.moderation_action_recorded` (de `moderation/`) se publica por cada
-entrada nueva del registro de auditoría de moderación (`ban`, `unban`, `kick`,
-`mute`, `unmute`, los mismos textos que guarda servers). Es inmutable: `action_id`
-es el id de la entrada y la clave de idempotencia, y `occurred_at` es el momento
-de la acción. Ninguno de los dos lleva quién reportó, quién resolvió ni qué
-moderador actuó (minimización de datos): el expediente es sobre el usuario
-investigado.
-
-Los eventos de `permissions/` son la réplica de "quién puede qué" para quien
-no quiere preguntarle a servers en cada pedido (`messaging` autoriza cada
-mensaje con ellos). Son fotos completas de una entidad, no diferencias, igual
-que `users.profile_updated`: `servers.role_updated` (nombre de los permisos del
-rol e `is_everyone`; se publica al crear y en cada cambio),
-`servers.role_deleted`, `servers.member_roles_updated` (el conjunto completo de
-roles de un miembro, @everyone incluido; se publica al unirse y en cada
-asignación o quita), `servers.channel_overrides_updated` (todos los overrides de
-un canal; lista vacía si no queda ninguno) y `servers.owner_updated` (al crear
-el servidor y en cada transferencia). Los permisos viajan por nombre
-(`VIEW_CHANNELS`, `SEND_MESSAGES`, ...), nunca como máscara de bits, para no
-atar al consumidor al orden interno de servers. El consumidor se queda con la
-foto de `occurred_at` más nueva de cada entidad, así que un evento repetido o
-fuera de orden no pisa datos más recientes. Borrar un rol no publica un evento
-por cada miembro u override que lo tenía: el consumidor lo saca de los
-miembros y de los overrides al recibir `servers.role_deleted`, y borrar un
-canal o un servidor arrastra sus overrides. Al sumar un consumidor nuevo hay
-que relanzar el backfill (migración de servers que re-publica todo) porque
-RabbitMQ no guarda lo que se publicó antes de que su cola existiera.
-
-`messaging.message_created` y `messaging.direct_message_created` llevan dos datos
-opcionales para armar las notificaciones push sin que `notifications` le pregunte
-nada a otro servicio: `content_preview` (el texto del mensaje cortado a unos 140
-caracteres, con las menciones de rol reemplazadas por `@rol`, las de usuario dejadas como
-`<@id>` para que el consumidor ponga el nombre, y "Archivo adjunto" si el mensaje solo
-trae archivos) y, en el de canal,
-`channel_name`. Son opcionales y se omiten cuando están vacíos: un consumidor que
-no los conoce, o un evento publicado antes de que existieran, sigue funcionando
-igual. Son la única excepción a "los eventos llevan solo ids" (ADR 0007): el
-consumidor usa el texto para el aviso y no lo guarda.
-
-`messaging.message_updated` y `messaging.message_deleted` (de `messages/`) completan el
-ciclo de vida del mensaje para las notificaciones. `message_updated` se publica
-cuando cambia el texto de un mensaje de un canal de servidor y lleva las menciones
-que el mensaje tiene **después** de la edición (`mentioned_user_ids`), más
-`channel_name` y `content_preview` opcionales: el consumidor compara con lo que ya
-tenía, agrega a quien quedó mencionado y quita a quien dejó de estarlo.
-`message_deleted` se publica al borrar un mensaje de canal o directo (en un directo
-no lleva `server_id` y `channel_id` es la conversación): el consumidor descarta lo que
-guardó sobre `message_id`. En ambos, `occurred_at` es el momento de la edición o del
-borrado. Un push ya enviado no se puede retirar.
-
-`messaging.user_presence_changed` (de `presence/`) avisa que cambió lo que importa
-para decidir si se manda un push: `connections` es `active` si el usuario tiene al
-menos una conexión abierta y activa, `idle` si tiene conexiones pero todas están
-inactivas, y `none` si no tiene ninguna; `do_not_disturb` es `true` si eligió "No
-molestar". Es el estado **real** de las conexiones, sin importar que el usuario se
-muestre `invisible` a los demás. Cuenta todas sus conexiones, de cualquier
-instancia y dispositivo. `version` crece con cada cambio del mismo usuario y el
-consumidor aplica el evento solo si su `version` es mayor a la que ya tiene, así
-que un evento repetido o fuera de orden es inofensivo. Si el consumidor no tiene
-datos de un usuario, o están vencidos, debe asumir `none`. `do_not_disturb` se
-manda siempre, también cuando es `false`.
-
-Cada evento es un tipo con nombre propio (embebe los campos comunes, no los
-repite) -- así uno puede evolucionar sin arrastrar al otro (ej. agregarle
-`Reason` a `MemberLeft` no toca `MemberJoined`).
-
-Al sumar el próximo evento (de `servers` o de otro servicio), se agrega una
-carpeta nueva con el mismo patrón -- no se toca `membership/`.
-
-## Uso (Go)
+### Usarlo desde un servicio en Go
 
 ```go
 import (
-    "github.com/discordia-grupo01/events-contract/broker"
+    "github.com/discordia-grupo01/events-contract/envelope"
     "github.com/discordia-grupo01/events-contract/membership"
 )
 
@@ -399,47 +71,51 @@ publisher.Publish(ctx, membership.RoutingKeyMemberJoined, membership.MemberJoine
 })
 ```
 
-Como el repo es público, `go get` no necesita token ni `GOPRIVATE` -- ni en
-CI ni en el build de Docker de los consumidores.
+Para validar un evento: `validate.Validate(routingKey, cuerpoJSON)`. En Elixir: `Discordia.EventsContract.Validator.validate(routing_key, mapa_o_json)`.
+
+Cada servicio fija la versión en su `go.mod` y la actualiza con:
+
+```bash
+go get github.com/discordia-grupo01/events-contract@v0.23.0
+```
+
+### Verificar contra los documentos
+
+El repositorio [`docs`](https://github.com/discordia-grupo01/docs) conserva la explicación de cada evento en prosa. Para comprobar que coincide con el contrato:
+
+```bash
+go run ./cmd/eventsgen docs-check ../docs/asyncapi
+```
+
+## Variables de entorno
+
+No usa ninguna.
+
+## Comandos Docker
+
+No tiene `docker-compose.yml`: no es un servicio. Para correr los tests sin instalar Go:
+
+```bash
+docker run --rm -v "$PWD":/app -w /app golang:1.22-alpine go test ./... -cover
+```
 
 ## Tests
 
 ```bash
-go test ./... -cover   # structs Go y vectores de firma
-mix test               # binding Elixir de admin (mix.exs mínimo, sin dependencias)
+go test ./... -cover
+mix test
 ```
 
-Los vectores de firma de `admin/vectors_test.go` y `admin/events_test.exs` son
-los mismos: si el texto firmado cambia, los dos se rompen y las copias de
-`messaging` y `voice` tienen que cambiar con ellos. El CI corre Go y Elixir
-(OTP 26.2, Elixir 1.16.2) y no etiqueta una versión nueva si falla alguno.
+El primero prueba las structs de Go, el generador y los vectores de firma. El segundo prueba el validador de Elixir. Los vectores de firma de `admin/vectors_test.go` y `admin/events_test.exs` son los mismos: si el texto firmado cambia, los dos se rompen y las copias que usan `messaging` y `voice-sfu` tienen que cambiar con ellos.
 
-## Versionado
+El CI corre Go y Elixir, y no publica una versión nueva si falla alguno.
 
-Este repo no se despliega -- el "CD" es taguear, y **el tag lo crea el CI solo**: cuando
-un merge llega a `main` y pasan los tests, el job `tag` de `.github/workflows/ci.yml` calcula
-la próxima versión, crea el tag y un GitHub Release con las notas generadas. No hay que hacerlo
-a mano.
+### Versiones
 
-- Si algún commit desde el último tag empieza con `feat` / `[feat]` (o dice `BREAKING CHANGE`),
-  sube la **minor** (`v0.9.1` -> `v0.10.0`).
-- Si no (`fix`, `docs`, etc.), sube la **patch** (`v0.9.1` -> `v0.9.2`).
-- Si `HEAD` ya tiene tag, no hace nada.
+Este repositorio no se despliega: el "despliegue" es un tag, y el CI lo crea solo cuando un merge llega a `main` y pasan los tests. Si algún commit desde el último tag empieza con `feat` o dice `BREAKING CHANGE`, sube la versión minor (`v0.9.1` a `v0.10.0`); si no, sube la patch (`v0.9.1` a `v0.9.2`).
 
-Para forzar un número distinto, se sigue pudiendo taguear a mano:
+## Más documentación
 
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-Los consumidores (`servers`, `identify-service`) fijan la versión en su
-`go.mod` y la actualizan con:
-
-```bash
-go get github.com/discordia-grupo01/events-contract@v0.3.0
-```
-
-Un cambio que rompe compatibilidad (renombrar un campo, sacar uno) primero
-se decide en el AsyncAPI de `docs`, y después se migra publisher y
-consumer juntos en el mismo despliegue.
+- [`asyncapi/events.asyncapi.yaml`](asyncapi/events.asyncapi.yaml): todos los eventos, generados desde el código.
+- [`catalog/catalog.go`](catalog/catalog.go): quién publica y quién consume cada evento.
+- [`docs`](https://github.com/discordia-grupo01/docs/tree/main/asyncapi): la explicación de cada evento y de cada dominio.
