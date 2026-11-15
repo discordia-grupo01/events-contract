@@ -3350,6 +3350,7 @@ components:
             - server_suspended
             - not_a_member
             - cancelled
+            - max_level_reached
           description: Reason is only set on servers.server_boost_rejected.
         signature:
           type: string
