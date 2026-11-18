@@ -4,10 +4,14 @@ defmodule Discordia.EventsContract.Voice do
   @routing_key_participant_joined "voice.participant_joined"
   @routing_key_participant_left "voice.participant_left"
   @routing_key_private_call "voice.private_call"
+  @routing_key_private_participant_joined "voice.private_participant_joined"
+  @routing_key_private_participant_left "voice.private_participant_left"
 
   def routing_key_participant_joined, do: @routing_key_participant_joined
   def routing_key_participant_left, do: @routing_key_participant_left
   def routing_key_private_call, do: @routing_key_private_call
+  def routing_key_private_participant_joined, do: @routing_key_private_participant_joined
+  def routing_key_private_participant_left, do: @routing_key_private_participant_left
 
   defmodule PrivateCall do
     defstruct [
@@ -31,5 +35,13 @@ defmodule Discordia.EventsContract.Voice do
 
   defmodule ParticipantLeft do
     defstruct [:event_id, :event_type, :occurred_at, :server_id, :room_id, :participant_id, :name]
+  end
+
+  defmodule PrivateParticipantJoined do
+    defstruct [:event_id, :event_type, :occurred_at, :call_id, :room_name, :participant_id, :name]
+  end
+
+  defmodule PrivateParticipantLeft do
+    defstruct [:event_id, :event_type, :occurred_at, :call_id, :room_name, :participant_id, :name]
   end
 end

@@ -3,9 +3,11 @@ package voice
 import "github.com/discordia-grupo01/events-contract/envelope"
 
 const (
-	RoutingKeyParticipantJoined = "voice.participant_joined"
-	RoutingKeyParticipantLeft   = "voice.participant_left"
-	RoutingKeyPrivateCall       = "voice.private_call"
+	RoutingKeyParticipantJoined        = "voice.participant_joined"
+	RoutingKeyParticipantLeft          = "voice.participant_left"
+	RoutingKeyPrivateCall              = "voice.private_call"
+	RoutingKeyPrivateParticipantJoined = "voice.private_participant_joined"
+	RoutingKeyPrivateParticipantLeft   = "voice.private_participant_left"
 )
 
 type PrivateCall struct {
@@ -35,6 +37,24 @@ type ParticipantLeft struct {
 	EventType     string `json:"event_type" contract:"enum=voice.participant_joined|voice.participant_left"`
 	ServerID      string `json:"server_id" contract:"format=uuid"`
 	RoomID        string `json:"room_id" contract:"format=uuid"`
+	ParticipantID string `json:"participant_id"`
+	Name          string `json:"name"`
+}
+
+type PrivateParticipantJoined struct {
+	envelope.Meta
+	EventType     string `json:"event_type" contract:"enum=voice.private_participant_joined"`
+	CallID        string `json:"call_id"`
+	RoomName      string `json:"room_name"`
+	ParticipantID string `json:"participant_id"`
+	Name          string `json:"name"`
+}
+
+type PrivateParticipantLeft struct {
+	envelope.Meta
+	EventType     string `json:"event_type" contract:"enum=voice.private_participant_left"`
+	CallID        string `json:"call_id"`
+	RoomName      string `json:"room_name"`
 	ParticipantID string `json:"participant_id"`
 	Name          string `json:"name"`
 }

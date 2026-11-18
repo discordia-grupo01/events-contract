@@ -137,6 +137,8 @@ func All() []Entry {
 		event(voice.RoutingKeyParticipantJoined, voice.ParticipantJoined{}, "voice-sfu"),
 		event(voice.RoutingKeyParticipantLeft, voice.ParticipantLeft{}, "voice-sfu"),
 		event(voice.RoutingKeyPrivateCall, voice.PrivateCall{}, "voice-sfu"),
+		event(voice.RoutingKeyPrivateParticipantJoined, voice.PrivateParticipantJoined{}, "voice-sfu"),
+		event(voice.RoutingKeyPrivateParticipantLeft, voice.PrivateParticipantLeft{}, "voice-sfu"),
 		internal(broadcast.EventNewMessage, broadcast.NewMessage{}),
 		internal(broadcast.EventMessageUpdated, broadcast.MessageUpdated{}),
 		internal(broadcast.EventMessageDeleted, broadcast.MessageDeleted{}),
