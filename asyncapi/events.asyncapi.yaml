@@ -501,6 +501,22 @@ channels:
         $ref: '#/components/messages/PrivateCall'
     bindings:
       $ref: '#/components/channelBindings/discordiaEvents'
+  voicePrivateParticipantJoined:
+    address: voice.private_participant_joined
+    title: voice.private_participant_joined
+    messages:
+      privateParticipantJoined:
+        $ref: '#/components/messages/PrivateParticipantJoined'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
+  voicePrivateParticipantLeft:
+    address: voice.private_participant_left
+    title: voice.private_participant_left
+    messages:
+      privateParticipantLeft:
+        $ref: '#/components/messages/PrivateParticipantLeft'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
   broadcastNewMessage:
     address: broadcast.new_message
     title: broadcast.new_message
@@ -1643,6 +1659,22 @@ operations:
     bindings:
       amqp:
         deliveryMode: 2
+  voiceSfuPublishesPrivateParticipantJoined:
+    action: send
+    title: discordia-voice-sfu publica voice.private_participant_joined
+    channel:
+      $ref: '#/channels/voicePrivateParticipantJoined'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  voiceSfuPublishesPrivateParticipantLeft:
+    action: send
+    title: discordia-voice-sfu publica voice.private_participant_left
+    channel:
+      $ref: '#/channels/voicePrivateParticipantLeft'
+    bindings:
+      amqp:
+        deliveryMode: 2
   messagingPublishesBroadcastNewMessage:
     action: send
     title: discordia-messaging publica broadcast.new_message
@@ -2678,6 +2710,36 @@ components:
             recipient_id: recipient-id
             room_name: room-name
             status: ringing
+    PrivateParticipantJoined:
+      name: PrivateParticipantJoined
+      title: voice.private_participant_joined
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PrivateParticipantJoined'
+      examples:
+        - payload:
+            call_id: call-id
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_type: voice.private_participant_joined
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            participant_id: participant-id
+            room_name: room-name
+    PrivateParticipantLeft:
+      name: PrivateParticipantLeft
+      title: voice.private_participant_left
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PrivateParticipantLeft'
+      examples:
+        - payload:
+            call_id: call-id
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            event_type: voice.private_participant_left
+            name: name
+            occurred_at: "2026-11-10T15:00:00Z"
+            participant_id: participant-id
+            room_name: room-name
     BroadcastNewMessage:
       name: BroadcastNewMessage
       title: broadcast.new_message
@@ -4449,6 +4511,54 @@ components:
         ended_by:
           type: string
       required: [event_id, occurred_at, event_type, call_id, conversation_id, caller_id, recipient_id, status]
+    PrivateParticipantJoined:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        event_type:
+          type: string
+          enum:
+            - voice.private_participant_joined
+        call_id:
+          type: string
+        room_name:
+          type: string
+        participant_id:
+          type: string
+        name:
+          type: string
+      required: [event_id, occurred_at, event_type, call_id, room_name, participant_id, name]
+    PrivateParticipantLeft:
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        event_type:
+          type: string
+          enum:
+            - voice.private_participant_left
+        call_id:
+          type: string
+        room_name:
+          type: string
+        participant_id:
+          type: string
+        name:
+          type: string
+      required: [event_id, occurred_at, event_type, call_id, room_name, participant_id, name]
     BroadcastNewMessage:
       description: NewMessage is sent to every instance of messaging when a message is created, so each one pushes it to the sockets it holds.
       type: object

@@ -19,6 +19,12 @@ func TestRoutingKeys(t *testing.T) {
 	if voice.RoutingKeyPrivateCall != "voice.private_call" {
 		t.Fatalf("private call routing key = %q", voice.RoutingKeyPrivateCall)
 	}
+	if voice.RoutingKeyPrivateParticipantJoined != "voice.private_participant_joined" {
+		t.Fatalf("private participant joined routing key = %q", voice.RoutingKeyPrivateParticipantJoined)
+	}
+	if voice.RoutingKeyPrivateParticipantLeft != "voice.private_participant_left" {
+		t.Fatalf("private participant left routing key = %q", voice.RoutingKeyPrivateParticipantLeft)
+	}
 }
 
 func TestPrivateCallJSONShape(t *testing.T) {
