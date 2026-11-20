@@ -31,6 +31,15 @@ channels:
         $ref: '#/components/messages/AccountRecoveryRejected'
     bindings:
       $ref: '#/components/channelBindings/discordiaEvents'
+  adminServerDeletionNotice:
+    address: admin.server_deletion_notice
+    title: admin.server_deletion_notice
+    description: 'ServerDeletionNotice is published by admin, in the same transaction as ServerDeletionRequested, so the owner of the server learns that staff deleted it. ServerDeletionRequested can''t carry this: servers deletes the same way whoever asked, and once it is gone nobody knows the owner or the name, so they travel here, taken from admin''s replica at the time of the request. notifications keeps one notice per owner and server until the owner sees it. Owner and name are signed so a valid notice can''t be sent to another user or with another name. There is no version: the notice changes no state.'
+    messages:
+      serverDeletionNotice:
+        $ref: '#/components/messages/ServerDeletionNotice'
+    bindings:
+      $ref: '#/components/channelBindings/discordiaEvents'
   adminServerDeletionRequested:
     address: admin.server_deletion_requested
     title: admin.server_deletion_requested
@@ -664,6 +673,22 @@ operations:
     title: discordia-identify-service consume admin.account_recovery_rejected
     channel:
       $ref: '#/channels/adminAccountRecoveryRejected'
+    bindings:
+      amqp:
+        ack: true
+  adminPublishesServerDeletionNotice:
+    action: send
+    title: discordia-admin publica admin.server_deletion_notice
+    channel:
+      $ref: '#/channels/adminServerDeletionNotice'
+    bindings:
+      amqp:
+        deliveryMode: 2
+  notificationsReceivesServerDeletionNotice:
+    action: receive
+    title: discordia-notifications consume admin.server_deletion_notice
+    channel:
+      $ref: '#/channels/adminServerDeletionNotice'
     bindings:
       amqp:
         ack: true
@@ -1932,6 +1957,21 @@ components:
             signature: signature
             user_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
       description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
+    ServerDeletionNotice:
+      name: ServerDeletionNotice
+      title: admin.server_deletion_notice
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ServerDeletionNotice'
+      examples:
+        - payload:
+            event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            occurred_at: "2026-11-10T15:00:00Z"
+            owner_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            server_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
+            server_name: server-name
+            signature: signature
+      description: 'Evento firmado con HMAC: el campo `signature` se calcula con el secreto compartido y el consumidor debe verificarlo antes de aplicar el cambio.'
     ServerDeletionRequested:
       name: ServerDeletionRequested
       title: admin.server_deletion_requested
@@ -3037,6 +3077,33 @@ components:
           type: string
           description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
       required: [event_id, occurred_at, request_id, user_id, signature]
+    ServerDeletionNotice:
+      description: 'ServerDeletionNotice is published by admin, in the same transaction as ServerDeletionRequested, so the owner of the server learns that staff deleted it. ServerDeletionRequested can''t carry this: servers deletes the same way whoever asked, and once it is gone nobody knows the owner or the name, so they travel here, taken from admin''s replica at the time of the request. notifications keeps one notice per owner and server until the owner sees it. Owner and name are signed so a valid notice can''t be sent to another user or with another name. There is no version: the notice changes no state.'
+      type: object
+      properties:
+        event_id:
+          type: string
+          format: uuid
+          description: Identificador único del evento. Usar para deduplicar (at-least-once).
+        occurred_at:
+          type: string
+          format: date-time
+          description: Momento del hecho de negocio, ISO 8601 en UTC.
+        server_id:
+          type: string
+          format: uuid
+          description: Servidor eliminado (ID de discordia-servers).
+        owner_id:
+          type: string
+          format: uuid
+          description: Dueño del servidor al momento del pedido (ID de discordia-identify).
+        server_name:
+          type: string
+          description: Nombre del servidor al momento del pedido; después del borrado no queda en ningún otro lado.
+        signature:
+          type: string
+          description: HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+      required: [event_id, occurred_at, server_id, owner_id, server_name, signature]
     ServerDeletionRequested:
       description: 'ServerDeletionRequested is published by admin when staff asks to delete a server. It is a request, not the fact: servers runs the same cascade it runs when the owner deletes the server and then publishes servers.server_deleted, which the other services already consume. It is irreversible, so servers must check the signature before touching anything. Same fields as ServerSuspended.'
       type: object

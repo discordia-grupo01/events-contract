@@ -37,12 +37,14 @@ defmodule Discordia.EventsContract.Admin do
   @routing_key_server_suspended "admin.server_suspended"
   @routing_key_server_reactivated "admin.server_reactivated"
   @routing_key_server_deletion_requested "admin.server_deletion_requested"
+  @routing_key_server_deletion_notice "admin.server_deletion_notice"
 
   def routing_key_user_suspended, do: @routing_key_user_suspended
   def routing_key_user_reactivated, do: @routing_key_user_reactivated
   def routing_key_server_suspended, do: @routing_key_server_suspended
   def routing_key_server_reactivated, do: @routing_key_server_reactivated
   def routing_key_server_deletion_requested, do: @routing_key_server_deletion_requested
+  def routing_key_server_deletion_notice, do: @routing_key_server_deletion_notice
   def routing_key_staff_member_added, do: @routing_key_staff_member_added
   def routing_key_staff_member_removed, do: @routing_key_staff_member_removed
 
@@ -152,6 +154,26 @@ defmodule Discordia.EventsContract.Admin do
     defstruct [:event_id, :occurred_at, :server_id, :version, :signature]
   end
 
+  defmodule ServerDeletionNotice do
+    @moduledoc """
+    Published with `ServerDeletionRequested` so the owner learns that staff
+    deleted the server. Carries the owner and the name taken from admin's
+    replica at the time of the request, because after the deletion nobody else
+    has them. There is no `version`: the notice changes no state.
+    """
+
+    @type t :: %__MODULE__{
+            event_id: String.t(),
+            occurred_at: String.t(),
+            server_id: String.t(),
+            owner_id: String.t(),
+            server_name: String.t(),
+            signature: String.t()
+          }
+
+    defstruct [:event_id, :occurred_at, :server_id, :owner_id, :server_name, :signature]
+  end
+
   @doc """
   Lowercase hex HMAC for `routing_key` and the JSON fields of an event.
   `subject_id` is the `user_id` or the `server_id`, depending on the event.
@@ -200,6 +222,70 @@ defmodule Discordia.EventsContract.Admin do
   end
 
   def verify(_routing_key, _event, _secret), do: false
+
+  @doc """
+  Lowercase hex HMAC of an `admin.server_deletion_notice`:
+
+      HMAC-SHA256(secret, routing_key \\n event_id \\n server_id \\n owner_id \\n server_name \\n occurred_at)
+
+  It has its own signed text because it signs the owner and the name instead
+  of a version. `occurred_at` must be the string as received.
+  """
+  @spec sign_server_deletion_notice(
+          String.t(),
+          String.t(),
+          String.t(),
+          String.t(),
+          String.t(),
+          String.t()
+        ) :: String.t()
+  def sign_server_deletion_notice(secret, event_id, server_id, owner_id, server_name, occurred_at)
+      when is_binary(secret) and is_binary(event_id) and is_binary(server_id) and
+             is_binary(owner_id) and is_binary(server_name) and is_binary(occurred_at) do
+    text =
+      Enum.join(
+        [
+          @routing_key_server_deletion_notice,
+          event_id,
+          server_id,
+          owner_id,
+          server_name,
+          occurred_at
+        ],
+        "\n"
+      )
+
+    :crypto.mac(:hmac, :sha256, secret, text) |> Base.encode16(case: :lower)
+  end
+
+  @doc """
+  Verifies the `signature` of a decoded `admin.server_deletion_notice` (string
+  keys) in constant time. Same rejections as `verify/3`.
+  """
+  @spec verify_server_deletion_notice(map(), String.t() | nil) :: boolean()
+  def verify_server_deletion_notice(%{} = event, secret) do
+    with true <- is_binary(secret) and secret != "",
+         %{
+           "event_id" => event_id,
+           "occurred_at" => occurred_at,
+           "server_id" => server_id,
+           "owner_id" => owner_id,
+           "server_name" => server_name,
+           "signature" => given
+         } <- event,
+         true <-
+           Enum.all?([event_id, occurred_at, server_id, owner_id, server_name], &is_binary/1),
+         true <- is_binary(given) and given != "" do
+      expected =
+        sign_server_deletion_notice(secret, event_id, server_id, owner_id, server_name, occurred_at)
+
+      byte_size(given) == byte_size(expected) and :crypto.hash_equals(given, expected)
+    else
+      _ -> false
+    end
+  end
+
+  def verify_server_deletion_notice(_event, _secret), do: false
 
   defp subject_key(@routing_key_user_suspended), do: "user_id"
   defp subject_key(@routing_key_user_reactivated), do: "user_id"

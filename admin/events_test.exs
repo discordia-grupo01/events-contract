@@ -159,6 +159,7 @@ defmodule Discordia.EventsContract.AdminTest do
       assert Admin.routing_key_server_suspended() == "admin.server_suspended"
       assert Admin.routing_key_server_reactivated() == "admin.server_reactivated"
       assert Admin.routing_key_server_deletion_requested() == "admin.server_deletion_requested"
+      assert Admin.routing_key_server_deletion_notice() == "admin.server_deletion_notice"
     end
 
     test "los structs de servidor llevan server_id y no user_id" do
@@ -173,6 +174,73 @@ defmodule Discordia.EventsContract.AdminTest do
         refute :user_id in keys
         assert [:event_id, :occurred_at, :signature, :version] -- keys == []
       end
+    end
+  end
+  describe "admin.server_deletion_notice" do
+    # Los mismos de TestServerDeletionNoticeSignatureVectors en admin/vectors_test.go.
+    @notice %{
+      "event_id" => "evt-123",
+      "occurred_at" => @fraction,
+      "server_id" => "server-42",
+      "owner_id" => "user-42",
+      "server_name" => "Club de Lectura",
+      "signature" => "890526dab913525952c35db1ec0ae624cc94928ce3192b1553c055413e6a060d"
+    }
+
+    test "sign_server_deletion_notice/6 reproduce los vectores" do
+      assert Admin.sign_server_deletion_notice(
+               @secret,
+               "evt-123",
+               "server-42",
+               "user-42",
+               "Club de Lectura",
+               @fraction
+             ) == @notice["signature"]
+
+      assert Admin.sign_server_deletion_notice(
+               @secret,
+               "evt-123",
+               "server-42",
+               "user-42",
+               "Club de Lectura",
+               @whole
+             ) == "c82b295ad6c5b49779b8d5424f12e5578432779e071231b0a58715560647e0fe"
+    end
+
+    test "verify_server_deletion_notice/2 acepta el vector" do
+      assert Admin.verify_server_deletion_notice(@notice, @secret)
+    end
+
+    test "rechaza cualquier campo firmado alterado" do
+      for {key, value} <- [
+            {"event_id", "evt-999"},
+            {"occurred_at", @whole},
+            {"server_id", "server-43"},
+            {"owner_id", "user-43"},
+            {"server_name", "Otro nombre"}
+          ] do
+        refute Admin.verify_server_deletion_notice(Map.put(@notice, key, value), @secret), key
+      end
+    end
+
+    test "rechaza un secreto distinto, vacío o nil, y firmas o campos inválidos" do
+      refute Admin.verify_server_deletion_notice(@notice, "otro")
+      refute Admin.verify_server_deletion_notice(@notice, "")
+      refute Admin.verify_server_deletion_notice(@notice, nil)
+      refute Admin.verify_server_deletion_notice(Map.put(@notice, "signature", ""), @secret)
+
+      refute Admin.verify_server_deletion_notice(
+               Map.put(@notice, "signature", String.upcase(@notice["signature"])),
+               @secret
+             )
+
+      refute Admin.verify_server_deletion_notice(Map.delete(@notice, "owner_id"), @secret)
+      refute Admin.verify_server_deletion_notice(Map.put(@notice, "server_name", 7), @secret)
+      refute Admin.verify_server_deletion_notice("no es un mapa", @secret)
+    end
+
+    test "verify/3 no lo acepta: tiene su propio texto firmado" do
+      refute Admin.verify("admin.server_deletion_notice", Map.put(@notice, "version", 1), @secret)
     end
   end
 end

@@ -28,6 +28,7 @@ const (
 	RoutingKeyServerSuspended         = "admin.server_suspended"
 	RoutingKeyServerReactivated       = "admin.server_reactivated"
 	RoutingKeyServerDeletionRequested = "admin.server_deletion_requested"
+	RoutingKeyServerDeletionNotice    = "admin.server_deletion_notice"
 	RoutingKeyStaffMemberAdded        = "admin.staff_member_added"
 	RoutingKeyStaffMemberRemoved      = "admin.staff_member_removed"
 
@@ -194,6 +195,58 @@ func (e *ServerDeletionRequested) Sign(secret string) {
 // empty/malformed signature never verifies.
 func (e ServerDeletionRequested) Verify(secret string) bool {
 	return verify(secret, RoutingKeyServerDeletionRequested, e.Meta, e.ServerID, e.Version, e.Signature)
+}
+
+// ServerDeletionNotice is published by admin, in the same transaction as
+// ServerDeletionRequested, so the owner of the server learns that staff deleted
+// it. ServerDeletionRequested can't carry this: servers deletes the same way
+// whoever asked, and once it is gone nobody knows the owner or the name, so
+// they travel here, taken from admin's replica at the time of the request.
+// notifications keeps one notice per owner and server until the owner sees it.
+//
+// Owner and name are signed so a valid notice can't be sent to another user or
+// with another name. There is no version: the notice changes no state.
+type ServerDeletionNotice struct {
+	envelope.Meta
+	// Servidor eliminado (ID de discordia-servers).
+	ServerID string `json:"server_id" contract:"format=uuid"`
+	// Dueño del servidor al momento del pedido (ID de discordia-identify).
+	OwnerID string `json:"owner_id" contract:"format=uuid"`
+	// Nombre del servidor al momento del pedido; después del borrado no queda en ningún otro lado.
+	ServerName string `json:"server_name"`
+	// HMAC-SHA256 en hexadecimal. Ver la sección "Firma" de la descripción del documento.
+	Signature string `json:"signature"`
+}
+
+// Sign sets Signature using secret. Admin calls it right before publishing.
+func (e *ServerDeletionNotice) Sign(secret string) {
+	e.Signature = hex.EncodeToString(noticeSignature(secret, e.Meta, e.ServerID, e.OwnerID, e.ServerName))
+}
+
+// Verify reports whether Signature is valid for secret. An empty secret or an
+// empty/malformed signature never verifies.
+func (e ServerDeletionNotice) Verify(secret string) bool {
+	if secret == "" || e.Signature == "" {
+		return false
+	}
+	got, err := hex.DecodeString(e.Signature)
+	if err != nil {
+		return false
+	}
+	return hmac.Equal(got, noticeSignature(secret, e.Meta, e.ServerID, e.OwnerID, e.ServerName))
+}
+
+// noticeSignature is HMAC-SHA256(secret, routing_key \n event_id \n server_id
+// \n owner_id \n server_name \n occurred_at). server_name is the only free text
+// and every other field has a fixed format, so a name with a line break can't
+// make two different notices sign the same text.
+func noticeSignature(secret string, meta envelope.Meta, serverID, ownerID, serverName string) []byte {
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write([]byte(strings.Join([]string{
+		RoutingKeyServerDeletionNotice, meta.EventID, serverID, ownerID, serverName,
+		meta.OccurredAt.UTC().Format(time.RFC3339Nano),
+	}, "\n")))
+	return mac.Sum(nil)
 }
 
 // AccountRecoveryApproved is published by admin when staff approves a request

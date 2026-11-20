@@ -80,3 +80,69 @@ func TestServerSignatureVectors(t *testing.T) {
 		t.Errorf("server deletion requested: got %s, want %s", deletion.Signature, want)
 	}
 }
+
+// Calculados con el mismo script aparte en Python. El aviso firma el dueño y el
+// nombre en vez de una versión, así que tiene su propio texto firmado.
+func TestServerDeletionNoticeSignatureVectors(t *testing.T) {
+	cases := []struct {
+		name string
+		meta envelope.Meta
+		want string
+	}{
+		{
+			name: "with fraction",
+			meta: envelope.Meta{EventID: "evt-123", OccurredAt: time.Date(2026, 10, 14, 12, 30, 45, 123456000, time.UTC)},
+			want: "890526dab913525952c35db1ec0ae624cc94928ce3192b1553c055413e6a060d",
+		},
+		{
+			name: "whole second",
+			meta: envelope.Meta{EventID: "evt-123", OccurredAt: time.Date(2026, 10, 14, 12, 30, 45, 0, time.UTC)},
+			want: "c82b295ad6c5b49779b8d5424f12e5578432779e071231b0a58715560647e0fe",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			notice := admin.ServerDeletionNotice{Meta: tc.meta, ServerID: "server-42", OwnerID: "user-42", ServerName: "Club de Lectura"}
+			notice.Sign(vectorSecret)
+			if notice.Signature != tc.want {
+				t.Fatalf("got %s, want %s", notice.Signature, tc.want)
+			}
+			if !notice.Verify(vectorSecret) {
+				t.Fatal("the notice should verify with its own signature")
+			}
+		})
+	}
+}
+
+func TestServerDeletionNoticeRejectsAnyTamperedField(t *testing.T) {
+	signed := admin.ServerDeletionNotice{
+		Meta:       envelope.Meta{EventID: "evt-123", OccurredAt: time.Date(2026, 10, 14, 12, 30, 45, 0, time.UTC)},
+		ServerID:   "server-42",
+		OwnerID:    "user-42",
+		ServerName: "Club de Lectura",
+	}
+	signed.Sign(vectorSecret)
+
+	tampered := map[string]func(*admin.ServerDeletionNotice){
+		"event id":     func(e *admin.ServerDeletionNotice) { e.EventID = "evt-999" },
+		"occurred at":  func(e *admin.ServerDeletionNotice) { e.OccurredAt = e.OccurredAt.Add(time.Second) },
+		"server":       func(e *admin.ServerDeletionNotice) { e.ServerID = "server-43" },
+		"owner":        func(e *admin.ServerDeletionNotice) { e.OwnerID = "user-43" },
+		"name":         func(e *admin.ServerDeletionNotice) { e.ServerName = "Otro nombre" },
+		"no signature": func(e *admin.ServerDeletionNotice) { e.Signature = "" },
+		"not hex":      func(e *admin.ServerDeletionNotice) { e.Signature = "zz" },
+	}
+	for name, tamper := range tampered {
+		t.Run(name, func(t *testing.T) {
+			e := signed
+			tamper(&e)
+			if e.Verify(vectorSecret) {
+				t.Fatal("a tampered notice must not verify")
+			}
+		})
+	}
+
+	if signed.Verify("") || signed.Verify("other-secret") {
+		t.Fatal("an empty or different secret must not verify")
+	}
+}
