@@ -277,7 +277,14 @@ defmodule Discordia.EventsContract.Admin do
            Enum.all?([event_id, occurred_at, server_id, owner_id, server_name], &is_binary/1),
          true <- is_binary(given) and given != "" do
       expected =
-        sign_server_deletion_notice(secret, event_id, server_id, owner_id, server_name, occurred_at)
+        sign_server_deletion_notice(
+          secret,
+          event_id,
+          server_id,
+          owner_id,
+          server_name,
+          occurred_at
+        )
 
       byte_size(given) == byte_size(expected) and :crypto.hash_equals(given, expected)
     else

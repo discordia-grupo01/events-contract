@@ -176,6 +176,7 @@ defmodule Discordia.EventsContract.AdminTest do
       end
     end
   end
+
   describe "admin.server_deletion_notice" do
     # Los mismos de TestServerDeletionNoticeSignatureVectors en admin/vectors_test.go.
     @notice %{
