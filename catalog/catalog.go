@@ -83,6 +83,7 @@ func All() []Entry {
 	return []Entry{
 		signed(event(admin.RoutingKeyAccountRecoveryApproved, admin.AccountRecoveryApproved{}, "admin", "identify-service")),
 		signed(event(admin.RoutingKeyAccountRecoveryRejected, admin.AccountRecoveryRejected{}, "admin", "identify-service")),
+		signed(event(admin.RoutingKeyServerDeletionNotice, admin.ServerDeletionNotice{}, "admin", "notifications")),
 		signed(event(admin.RoutingKeyServerDeletionRequested, admin.ServerDeletionRequested{}, "admin", "servers")),
 		signed(event(admin.RoutingKeyServerReactivated, admin.ServerReactivated{}, "admin", "messaging", "servers")),
 		signed(event(admin.RoutingKeyServerSuspended, admin.ServerSuspended{}, "admin", "messaging", "servers", "voice-sfu")),

@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/discordia-grupo01/events-contract/schemas/admin.server_deletion_notice.json",
+  "title": "admin.server_deletion_notice",
+  "description": "ServerDeletionNotice is published by admin, in the same transaction as ServerDeletionRequested, so the owner of the server learns that staff deleted it. ServerDeletionRequested can't carry this: servers deletes the same way whoever asked, and once it is gone nobody knows the owner or the name, so they travel here, taken from admin's replica at the time of the request. notifications keeps one notice per owner and server until the owner sees it. Owner and name are signed so a valid notice can't be sent to another user or with another name. There is no version: the notice changes no state.",
+  "type": "object",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Identificador único del evento. Usar para deduplicar (at-least-once)."
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Momento del hecho de negocio, ISO 8601 en UTC."
+    },
+    "server_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Servidor eliminado (ID de discordia-servers)."
+    },
+    "owner_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Dueño del servidor al momento del pedido (ID de discordia-identify)."
+    },
+    "server_name": {
+      "type": "string",
+      "description": "Nombre del servidor al momento del pedido; después del borrado no queda en ningún otro lado."
+    },
+    "signature": {
+      "type": "string",
+      "description": "HMAC-SHA256 en hexadecimal. Ver la sección \"Firma\" de la descripción del documento."
+    }
+  },
+  "required": [
+    "event_id",
+    "occurred_at",
+    "server_id",
+    "owner_id",
+    "server_name",
+    "signature"
+  ]
+}
