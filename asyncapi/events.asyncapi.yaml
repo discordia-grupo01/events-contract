@@ -2507,6 +2507,7 @@ components:
         - payload:
             event_id: 0b6f1c8e-7a2d-4e3f-9c1b-5d4a3e2f1a0b
             is_everyone: true
+            name: name
             occurred_at: "2026-11-10T15:00:00Z"
             permissions:
               - permissions
@@ -4082,6 +4083,10 @@ components:
         is_everyone:
           type: boolean
           description: true para el rol `@everyone`, que todo miembro tiene y no se puede borrar.
+        name:
+          type: string
+          maxLength: 100
+          description: 'Nombre del rol, para mostrarlo en los avisos (por ejemplo, el push de una mención). Opcional: los eventos anteriores no lo traen.'
       required: [event_id, occurred_at, server_id, role_id, permissions, is_everyone]
     HealthChanged:
       type: object
