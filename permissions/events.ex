@@ -28,10 +28,11 @@ defmodule Discordia.EventsContract.Permissions do
             server_id: String.t(),
             role_id: String.t(),
             permissions: [String.t()],
-            is_everyone: boolean()
+            is_everyone: boolean(),
+            name: String.t() | nil
           }
 
-    defstruct [:event_id, :occurred_at, :server_id, :role_id, :permissions, :is_everyone]
+    defstruct [:event_id, :occurred_at, :server_id, :role_id, :permissions, :is_everyone, :name]
   end
 
   defmodule RoleDeleted do

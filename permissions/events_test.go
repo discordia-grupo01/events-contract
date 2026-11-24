@@ -28,6 +28,30 @@ func decode(t *testing.T, event any) map[string]any {
 	return got
 }
 
+func TestRoleUpdatedJSONShapeWithName(t *testing.T) {
+	got := decode(t, permissions.RoleUpdated{
+		Meta:        meta,
+		ServerID:    "server-1",
+		RoleID:      "role-1",
+		Permissions: []string{"SEND_MESSAGES"},
+		IsEveryone:  false,
+		Name:        "admin",
+	})
+
+	want := map[string]any{
+		"event_id":    "evt-1",
+		"occurred_at": "2026-01-01T00:00:00Z",
+		"server_id":   "server-1",
+		"role_id":     "role-1",
+		"permissions": []any{"SEND_MESSAGES"},
+		"is_everyone": false,
+		"name":        "admin",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
 func TestRoleUpdatedJSONShape(t *testing.T) {
 	got := decode(t, permissions.RoleUpdated{
 		Meta:        meta,

@@ -18,6 +18,8 @@ type RoleUpdated struct {
 	Permissions []string `json:"permissions"`
 	// true para el rol `@everyone`, que todo miembro tiene y no se puede borrar.
 	IsEveryone bool `json:"is_everyone"`
+	// Nombre del rol, para mostrarlo en los avisos (por ejemplo, el push de una mención). Opcional: los eventos anteriores no lo traen.
+	Name string `json:"name,omitempty" contract:"maxLength=100"`
 }
 
 type RoleDeleted struct {
